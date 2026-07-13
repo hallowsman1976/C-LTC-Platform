@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover" />
+  <title>LTC Smart Care</title>
+  <meta name="theme-color" content="#0284c7" />
+  <link rel="manifest" href="manifest.json" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.9/dist/chart.umd.min.js"></script>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <link rel="stylesheet" href="assets/css/app.css" />
+</head>
+<body class="bg-slate-50 font-thai text-slate-800 min-h-screen">
+
+  <!-- Offline Banner -->
+  <div id="offline-banner" class="hidden fixed top-0 inset-x-0 z-50 bg-amber-500 text-white text-xs text-center py-2">
+    คุณกำลังออฟไลน์ — ข้อมูลบางส่วนอาจไม่เป็นปัจจุบัน
+  </div>
+
+  <!-- Loading Overlay -->
+  <div id="loading-overlay" class="hidden fixed inset-0 z-40 bg-white/70 backdrop-blur-sm flex items-center justify-center">
+    <div class="w-10 h-10 border-4 border-sky-500 border-t-transparent rounded-full animate-spin"></div>
+  </div>
+
+  <!-- Toast -->
+  <div id="toast-container" class="hidden fixed bottom-20 md:bottom-6 inset-x-4 z-50 flex justify-center"></div>
+
+  <div class="md:flex md:min-h-screen">
+
+    <!-- Sidebar (Desktop เท่านั้น) -->
+    <aside class="no-print hidden md:flex md:flex-col md:w-64 md:shrink-0 bg-white border-r border-slate-200 md:sticky md:top-0 md:h-screen">
+      <div class="px-5 py-5 border-b border-slate-100">
+        <h1 class="text-lg font-bold text-sky-700">LTC Smart Care</h1>
+        <p class="text-xs text-slate-400 mt-0.5">ระบบดูแลผู้ป่วยระยะยาวในชุมชน</p>
+      </div>
+      <nav class="flex-1 px-3 py-4 space-y-1">
+        <a href="#/dashboard" data-route="/dashboard" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-slate-400 hover:bg-slate-50">
+          <span class="text-lg leading-none">🏠</span><span>หน้าหลัก</span>
+        </a>
+        <a href="#/patients" data-route="/patients" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-slate-400 hover:bg-slate-50">
+          <span class="text-lg leading-none">🧑‍🤝‍🧑</span><span>ผู้ป่วย</span>
+        </a>
+        <a href="#/assessments" data-route="/assessments" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-slate-400 hover:bg-slate-50">
+          <span class="text-lg leading-none">📋</span><span>แบบประเมิน</span>
+        </a>
+        <a href="#/map" data-route="/map" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-slate-400 hover:bg-slate-50">
+          <span class="text-lg leading-none">🗺️</span><span>แผนที่ผู้ป่วย</span>
+        </a>
+        <a href="#/reports" data-route="/reports" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-slate-400 hover:bg-slate-50">
+          <span class="text-lg leading-none">📊</span><span>รายงาน</span>
+        </a>
+        <a href="#/settings" data-route="/settings" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-slate-400 hover:bg-slate-50">
+          <span class="text-lg leading-none">⚙️</span><span>ตั้งค่า</span>
+        </a>
+      </nav>
+      <div id="sidebar-user" class="px-5 py-4 border-t border-slate-100 text-xs text-slate-400"></div>
+    </aside>
+
+    <div class="flex-1 flex flex-col md:min-h-screen min-w-0">
+      <!-- Header (มือถือเท่านั้น) -->
+      <header class="no-print md:hidden sticky top-0 z-30 bg-white border-b border-slate-200 px-4 py-3">
+        <h1 class="text-base font-bold text-sky-700">LTC Smart Care</h1>
+      </header>
+
+      <main id="app-content" class="flex-1 pb-20 md:pb-8 min-w-0"></main>
+
+      <!-- Bottom Navigation (มือถือเท่านั้น) -->
+      <nav class="app-bottom-nav no-print md:hidden fixed bottom-0 inset-x-0 z-30 bg-white border-t border-slate-200 grid grid-cols-4">
+        <a href="#/dashboard" data-route="/dashboard" class="flex flex-col items-center justify-center py-2 gap-0.5 text-xs text-slate-400">
+          <span class="text-lg leading-none">🏠</span><span>หน้าหลัก</span>
+        </a>
+        <a href="#/patients" data-route="/patients" class="flex flex-col items-center justify-center py-2 gap-0.5 text-xs text-slate-400">
+          <span class="text-lg leading-none">🧑‍🤝‍🧑</span><span>ผู้ป่วย</span>
+        </a>
+        <a href="#/assessments" data-route="/assessments" class="flex flex-col items-center justify-center py-2 gap-0.5 text-xs text-slate-400">
+          <span class="text-lg leading-none">📋</span><span>แบบประเมิน</span>
+        </a>
+        <a href="#/settings" data-route="/settings" class="flex flex-col items-center justify-center py-2 gap-0.5 text-xs text-slate-400">
+          <span class="text-lg leading-none">⚙️</span><span>ตั้งค่า</span>
+        </a>
+      </nav>
+    </div>
+  </div>
+
+  <script type="module" src="assets/js/router.js"></script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('service-worker.js').catch(() => {});
+      });
+    }
+  </script>
+</body>
+</html>

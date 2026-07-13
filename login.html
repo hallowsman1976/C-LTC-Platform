@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover" />
+  <title>เข้าสู่ระบบ · LTC Smart Care</title>
+  <meta name="theme-color" content="#0284c7" />
+  <link rel="manifest" href="manifest.json" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="assets/css/app.css" />
+</head>
+<body class="bg-sky-50 font-thai text-slate-800 min-h-screen flex flex-col">
+
+  <!-- Offline Banner -->
+  <div id="offline-banner" class="hidden fixed top-0 inset-x-0 z-50 bg-amber-500 text-white text-xs text-center py-2">
+    คุณกำลังออฟไลน์ — กรุณาเชื่อมต่ออินเทอร์เน็ตเพื่อเข้าสู่ระบบ
+  </div>
+
+  <!-- Loading Overlay -->
+  <div id="loading-overlay" class="hidden fixed inset-0 z-40 bg-white/70 backdrop-blur-sm flex items-center justify-center">
+    <div class="w-10 h-10 border-4 border-sky-500 border-t-transparent rounded-full animate-spin"></div>
+  </div>
+
+  <!-- Toast -->
+  <div id="toast-container" class="hidden fixed bottom-6 inset-x-4 z-50 flex justify-center"></div>
+
+  <main class="flex-1 flex items-center justify-center px-5 py-10">
+    <div class="w-full max-w-sm">
+      <div class="text-center mb-8">
+        <h1 class="text-2xl font-bold text-sky-700">LTC Smart Care</h1>
+        <p class="text-sm text-slate-500 mt-1">ระบบดูแลผู้ป่วยระยะยาวในชุมชน</p>
+      </div>
+
+      <div class="bg-white rounded-2xl shadow-sm p-5">
+        <div class="grid grid-cols-2 gap-1 bg-slate-100 rounded-xl p-1 mb-5">
+          <button type="button" id="tab-cg" class="py-2 rounded-lg text-sm font-medium transition">ผู้ดูแล/อสม.</button>
+          <button type="button" id="tab-staff" class="py-2 rounded-lg text-sm font-medium transition">เจ้าหน้าที่</button>
+        </div>
+
+        <!-- Login ด้วย CID (CG) -->
+        <form id="login-form-cg" class="space-y-4">
+          <div>
+            <label for="cid-input" class="block text-xs font-medium text-slate-500 mb-1">เลขประจำตัวประชาชน 13 หลัก</label>
+            <input id="cid-input" name="cid" type="text" inputmode="numeric" maxlength="13" placeholder="1234567890123"
+              autocomplete="off"
+              class="w-full px-3 py-3 rounded-xl border border-slate-200 text-sm tracking-wide focus:outline-none focus:ring-2 focus:ring-sky-500" />
+            <p id="cid-error" class="hidden text-xs text-rose-500 mt-1"></p>
+          </div>
+          <button type="submit" class="w-full py-3 rounded-xl bg-sky-600 text-white font-medium text-sm active:bg-sky-700">เข้าสู่ระบบ</button>
+        </form>
+
+        <!-- Login ด้วย Username/Password (ADMIN/CM/VIEWER) -->
+        <form id="login-form-staff" class="space-y-4 hidden">
+          <div>
+            <label for="username-input" class="block text-xs font-medium text-slate-500 mb-1">ชื่อผู้ใช้</label>
+            <input id="username-input" name="username" type="text" autocomplete="username"
+              class="w-full px-3 py-3 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500" />
+          </div>
+          <div>
+            <label for="password-input" class="block text-xs font-medium text-slate-500 mb-1">รหัสผ่าน</label>
+            <input id="password-input" name="password" type="password" autocomplete="current-password"
+              class="w-full px-3 py-3 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500" />
+          </div>
+          <label class="flex items-center gap-2 text-xs text-slate-500">
+            <input id="remember-me-input" type="checkbox" class="rounded border-slate-300 text-sky-600 focus:ring-sky-500" />
+            จดจำฉันไว้ 30 วัน
+          </label>
+          <p id="staff-error" class="hidden text-xs text-rose-500"></p>
+          <button type="submit" class="w-full py-3 rounded-xl bg-sky-600 text-white font-medium text-sm active:bg-sky-700">เข้าสู่ระบบ</button>
+        </form>
+      </div>
+
+      <p class="text-center text-xs text-slate-400 mt-6">LTC Smart Care Phase 6</p>
+    </div>
+  </main>
+
+  <script type="module">
+    import { login, isAuthenticated } from './assets/js/auth.js';
+    import { showToast, setLoading, initOfflineBanner } from './assets/js/ui.js';
+    import { isValidThaiCid, isValidUsername, isValidPassword, formatCidInput } from './assets/js/validation.js';
+    import { ApiError, NetworkError } from './assets/js/api.js';
+
+    initOfflineBanner();
+
+    // ถ้ามี session ที่ยังไม่หมดอายุอยู่แล้ว ไม่ต้องให้ login ซ้ำ
+    if (isAuthenticated()) {
+      location.href = 'index.html';
+    }
+
+    const tabCg = document.getElementById('tab-cg');
+    const tabStaff = document.getElementById('tab-staff');
+    const formCg = document.getElementById('login-form-cg');
+    const formStaff = document.getElementById('login-form-staff');
+
+    function activateTab(mode) {
+      const isCg = mode === 'cg';
+      formCg.classList.toggle('hidden', !isCg);
+      formStaff.classList.toggle('hidden', isCg);
+
+      tabCg.classList.toggle('bg-white', isCg);
+      tabCg.classList.toggle('shadow-sm', isCg);
+      tabCg.classList.toggle('text-sky-700', isCg);
+      tabCg.classList.toggle('text-slate-500', !isCg);
+
+      tabStaff.classList.toggle('bg-white', !isCg);
+      tabStaff.classList.toggle('shadow-sm', !isCg);
+      tabStaff.classList.toggle('text-sky-700', !isCg);
+      tabStaff.classList.toggle('text-slate-500', isCg);
+    }
+    activateTab('cg');
+    tabCg.addEventListener('click', () => activateTab('cg'));
+    tabStaff.addEventListener('click', () => activateTab('staff'));
+
+    function handleLoginError(err, errorEl) {
+      if (err instanceof ApiError || err instanceof NetworkError) {
+        errorEl.textContent = err.message;
+        errorEl.classList.remove('hidden');
+      } else {
+        showToast('เกิดข้อผิดพลาดที่ไม่คาดคิด กรุณาลองใหม่อีกครั้ง', 'error');
+      }
+    }
+
+    const cidInput = document.getElementById('cid-input');
+    const cidError = document.getElementById('cid-error');
+    cidInput.addEventListener('input', () => {
+      cidInput.value = formatCidInput(cidInput.value);
+    });
+
+    formCg.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      cidError.classList.add('hidden');
+      const cid = cidInput.value.trim();
+
+      if (!isValidThaiCid(cid)) {
+        cidError.textContent = 'กรุณากรอกเลขประจำตัวประชาชนให้ครบ 13 หลักและถูกต้อง';
+        cidError.classList.remove('hidden');
+        return;
+      }
+
+      setLoading(true);
+      try {
+        await login({ mode: 'cg', cid });
+        location.href = 'index.html';
+      } catch (err) {
+        handleLoginError(err, cidError);
+      } finally {
+        setLoading(false);
+      }
+    });
+
+    const usernameInput = document.getElementById('username-input');
+    const passwordInput = document.getElementById('password-input');
+    const rememberMeInput = document.getElementById('remember-me-input');
+    const staffError = document.getElementById('staff-error');
+
+    formStaff.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      staffError.classList.add('hidden');
+      const username = usernameInput.value.trim();
+      const password = passwordInput.value;
+
+      if (!isValidUsername(username) || !isValidPassword(password)) {
+        staffError.textContent = 'กรุณากรอกชื่อผู้ใช้และรหัสผ่านให้ครบถ้วน';
+        staffError.classList.remove('hidden');
+        return;
+      }
+
+      setLoading(true);
+      try {
+        await login({ mode: 'staff', username, password, rememberMe: rememberMeInput.checked });
+        location.href = 'index.html';
+      } catch (err) {
+        handleLoginError(err, staffError);
+      } finally {
+        setLoading(false);
+      }
+    });
+  </script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('service-worker.js').catch(() => {});
+      });
+    }
+  </script>
+</body>
+</html>

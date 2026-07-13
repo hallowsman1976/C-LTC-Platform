@@ -1,0 +1,71 @@
+/**
+ * app.css
+ * สไตล์เสริมนอกเหนือจาก Tailwind CDN (ใช้เท่าที่ utility class อย่างเดียวทำไม่ได้: font, keyframe, safe-area)
+ */
+
+:root {
+  color-scheme: light;
+}
+
+html, body {
+  height: 100%;
+}
+
+.font-thai {
+  font-family: 'Noto Sans Thai', 'Segoe UI', sans-serif;
+}
+
+body {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* เผื่อพื้นที่ notch/home-indicator ของมือถือ (มือถือ-first) */
+nav.app-bottom-nav {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+#offline-banner {
+  padding-top: env(safe-area-inset-top);
+}
+
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade-in {
+  animation: fade-in 0.18s ease-out;
+}
+
+input:focus,
+button:focus-visible {
+  outline: none;
+}
+
+::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+}
+
+/**
+ * Print/PDF-friendly (Phase 9) — ซ่อน chrome ของแอป (sidebar/header/bottom nav/banner/ปุ่มต่าง ๆ)
+ * เหลือแต่เนื้อหารายงานเวลาสั่งพิมพ์หรือ "บันทึกเป็น PDF" จาก dialog พิมพ์ของเบราว์เซอร์
+ * ใช้คู่กับ Tailwind class ปกติ (ไม่ต้อง JS เพิ่ม) — องค์ประกอบใดที่ไม่ควรพิมพ์ให้ใส่ class "no-print"
+ */
+@media print {
+  .no-print,
+  #offline-banner,
+  #loading-overlay,
+  #toast-container {
+    display: none !important;
+  }
+
+  body {
+    background: #fff !important;
+  }
+
+  main#app-content {
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+}

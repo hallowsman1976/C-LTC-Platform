@@ -1,0 +1,16 @@
+{
+  "name": "LTC Smart Care",
+  "short_name": "LTC Care",
+  "description": "ระบบดูแลผู้ป่วยระยะยาวในชุมชน (Long-Term Care) สำหรับ Caregiver, Case Manager และผู้ดูแลระบบ",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f8fafc",
+  "theme_color": "#0284c7",
+  "lang": "th",
+  "icons": [
+    { "src": "assets/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "assets/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}
