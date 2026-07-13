@@ -23,8 +23,13 @@ export async function renderDashboard(content) {
 
   content.innerHTML = `
     <div class="px-4 py-5 max-w-4xl">
-      <p class="text-sm text-slate-500">ยินดีต้อนรับ</p>
-      <h1 class="text-xl font-bold text-slate-800 mb-4">${escapeHtml(user ? user.name : '')}</h1>
+      <div class="relative rounded-2xl overflow-hidden mb-4 shadow-sm">
+        <img src="assets/illustrations/dashboard-hero.svg" alt="" class="w-full h-28 md:h-32 object-cover" />
+        <div class="absolute inset-0 flex flex-col justify-center px-5 max-w-[55%]">
+          <p class="text-xs text-sky-100">ยินดีต้อนรับ</p>
+          <h1 class="text-lg md:text-xl font-bold text-white truncate">${escapeHtml(user ? user.name : '')}</h1>
+        </div>
+      </div>
 
       <div class="bg-white rounded-2xl shadow-sm p-4 mb-4 flex items-center justify-between">
         <div>
@@ -38,11 +43,15 @@ export async function renderDashboard(content) {
 
       <div class="grid grid-cols-2 gap-3 mb-4 md:hidden">
         <a href="#/map" class="bg-white rounded-2xl shadow-sm p-4 flex items-center gap-3">
-          <span class="text-2xl">🗺️</span>
+          <span class="w-9 h-9 rounded-lg bg-sky-50 text-sky-600 flex items-center justify-center shrink-0">
+            <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21Z"/><circle cx="12" cy="9.5" r="2.5"/></svg>
+          </span>
           <span class="text-sm font-medium text-slate-700">แผนที่ผู้ป่วย</span>
         </a>
         <a href="#/reports" class="bg-white rounded-2xl shadow-sm p-4 flex items-center gap-3">
-          <span class="text-2xl">📊</span>
+          <span class="w-9 h-9 rounded-lg bg-sky-50 text-sky-600 flex items-center justify-center shrink-0">
+            <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10M10 20V4M16 20v-7M21 20H3"/></svg>
+          </span>
           <span class="text-sm font-medium text-slate-700">รายงาน</span>
         </a>
       </div>

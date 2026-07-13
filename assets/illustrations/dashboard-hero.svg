@@ -1,0 +1,28 @@
+<svg viewBox="0 0 600 200" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="เครือข่ายดูแลผู้ป่วยในชุมชน">
+  <rect width="600" height="200" rx="24" fill="#0284c7"/>
+  <rect width="600" height="200" rx="24" fill="#0ea5e9" opacity="0.2"/>
+
+  <!-- decorative shapes, all clustered right side so left ~55% stays clear for overlaid text -->
+  <circle cx="560" cy="36" r="34" fill="#fbbf24" opacity="0.85"/>
+  <circle cx="330" cy="185" r="60" fill="#ffffff" opacity="0.05"/>
+
+  <!-- house -->
+  <path d="M336 118 L398 74 L460 118 Z" fill="#f0f9ff"/>
+  <rect x="346" y="118" width="104" height="66" rx="9" fill="#ffffff"/>
+  <rect x="386" y="140" width="26" height="44" rx="4" fill="#0284c7"/>
+  <rect x="358" y="128" width="20" height="20" rx="4" fill="#7dd3fc"/>
+  <rect x="418" y="128" width="20" height="20" rx="4" fill="#7dd3fc"/>
+
+  <!-- heart -->
+  <path d="M470 132 C470 122 483 122 483 132 C483 122 496 122 496 132 C496 145 483 155 483 155 C483 155 470 145 470 132 Z" fill="#f43f5e"/>
+
+  <!-- community: three connected people -->
+  <line x1="500" y1="150" x2="530" y2="132" stroke="#ffffff" stroke-width="3" opacity="0.6"/>
+  <line x1="530" y1="132" x2="560" y2="152" stroke="#ffffff" stroke-width="3" opacity="0.6"/>
+  <circle cx="500" cy="142" r="14" fill="#fde68a"/>
+  <rect x="486" y="156" width="28" height="22" rx="9" fill="#f59e0b"/>
+  <circle cx="530" cy="120" r="14" fill="#bae6fd"/>
+  <rect x="516" y="134" width="28" height="22" rx="9" fill="#38bdf8"/>
+  <circle cx="560" cy="145" r="14" fill="#bbf7d0"/>
+  <rect x="546" y="159" width="28" height="22" rx="9" fill="#34d399"/>
+</svg>

@@ -5,7 +5,7 @@
  */
 import { apiCall } from '../api.js';
 import { hasRole } from '../auth.js';
-import { renderCardSkeleton, showToast, confirmDialog, promptDialog, escapeHtml } from '../ui.js';
+import { renderCardSkeleton, renderEmptyState, showToast, confirmDialog, promptDialog, escapeHtml } from '../ui.js';
 import { carePlanStatusLabel, carePlanStatusBadgeClass } from '../constants.js';
 
 /**
@@ -78,11 +78,10 @@ export async function renderCarePlan(content, params) {
  */
 function renderPlanList(container, plans, ctx) {
   if (!plans || plans.length === 0) {
-    container.innerHTML = `
-      <div class="flex flex-col items-center justify-center text-center py-10 px-6 bg-white rounded-2xl shadow-sm">
-        <p class="text-slate-500 text-sm">ยังไม่มีแผนการดูแลสำหรับผู้ป่วยรายนี้</p>
-      </div>
-    `;
+    renderEmptyState(container, {
+      title: 'ยังไม่มีแผนการดูแลสำหรับผู้ป่วยรายนี้',
+      message: 'กด "+ สร้างแผนใหม่" ด้านบนเพื่อเริ่มต้น'
+    });
     return;
   }
 

@@ -122,6 +122,28 @@ export function renderCardSkeleton(container) {
 }
 
 /**
+ * เรนเดอร์สถานะ "ยังไม่มีข้อมูล" พร้อมภาพประกอบ (flat illustration ชุดเดียวกับทั้งแอป) แทนรายการว่างเปล่า
+ * @param {HTMLElement} container
+ * @param {{title: string, message?: string, actionLabel?: string, onAction?: Function}} options
+ */
+export function renderEmptyState(container, options) {
+  if (!container) return;
+  const { title, message = '', actionLabel = '', onAction } = options;
+  container.innerHTML = `
+    <div class="flex flex-col items-center justify-center text-center py-10 px-6 bg-white rounded-2xl shadow-sm">
+      <img src="assets/illustrations/empty-state.svg" alt="" class="w-32 h-auto mb-4" />
+      <p class="text-slate-700 font-medium text-sm mb-1">${escapeHtml(title)}</p>
+      ${message ? `<p class="text-slate-400 text-xs mb-3">${escapeHtml(message)}</p>` : ''}
+      ${actionLabel && onAction ? '<button id="empty-state-action-btn" type="button" class="mt-1 px-4 py-2 rounded-lg bg-sky-600 text-white text-xs font-medium">' + escapeHtml(actionLabel) + '</button>' : ''}
+    </div>
+  `;
+  if (actionLabel && onAction) {
+    const btn = container.querySelector('#empty-state-action-btn');
+    if (btn) btn.addEventListener('click', onAction);
+  }
+}
+
+/**
  * เรนเดอร์แถบเปลี่ยนหน้า (ก่อนหน้า/ถัดไป) — ซ่อนตัวเองถ้ามีหน้าเดียว
  * @param {HTMLElement} container
  * @param {{page:number, pageSize:number, total:number}} state

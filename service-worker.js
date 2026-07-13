@@ -4,7 +4,7 @@
  * ไม่ cache การเรียก API เด็ดขาด — ทุก action เป็น POST อยู่แล้วซึ่ง Cache API ไม่รองรับ จึงปล่อยผ่าน network ตรง ๆ เสมอ
  */
 
-const CACHE_NAME = 'ltc-smart-care-v1';
+const CACHE_NAME = 'ltc-smart-care-v2';
 const APP_SHELL_FILES = [
   './',
   './index.html',
@@ -17,7 +17,10 @@ const APP_SHELL_FILES = [
   './assets/js/router.js',
   './assets/js/storage.js',
   './assets/js/validation.js',
-  './assets/js/ui.js'
+  './assets/js/ui.js',
+  './assets/illustrations/hero-caregiving.svg',
+  './assets/illustrations/dashboard-hero.svg',
+  './assets/illustrations/empty-state.svg'
 ];
 
 self.addEventListener('install', (event) => {

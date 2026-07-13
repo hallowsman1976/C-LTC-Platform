@@ -1,0 +1,47 @@
+<svg viewBox="0 0 480 360" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="ผู้ดูแลเยี่ยมบ้านผู้สูงอายุ">
+  <!-- background -->
+  <rect width="480" height="360" rx="28" fill="#e0f2fe"/>
+  <rect x="0" y="288" width="480" height="72" fill="#bae6fd"/>
+
+  <!-- window -->
+  <rect x="40" y="44" width="96" height="112" rx="12" fill="#ffffff" stroke="#38bdf8" stroke-width="5"/>
+  <line x1="88" y1="44" x2="88" y2="156" stroke="#38bdf8" stroke-width="5"/>
+  <line x1="40" y1="100" x2="136" y2="100" stroke="#38bdf8" stroke-width="5"/>
+  <circle cx="108" cy="70" r="15" fill="#fbbf24"/>
+
+  <!-- plant -->
+  <rect x="398" y="264" width="38" height="42" rx="8" fill="#0284c7"/>
+  <path d="M417 264 C398 244 398 212 417 200 C436 212 436 244 417 264" fill="#10b981"/>
+  <path d="M417 264 C403 248 398 226 409 210 C420 226 425 248 417 264" fill="#34d399"/>
+
+  <!-- rug -->
+  <ellipse cx="260" cy="298" rx="150" ry="20" fill="#7dd3fc" opacity="0.5"/>
+
+  <!-- armchair -->
+  <rect x="206" y="182" width="34" height="128" rx="16" fill="#f97316"/>
+  <rect x="356" y="182" width="34" height="128" rx="16" fill="#f97316"/>
+  <rect x="218" y="196" width="160" height="104" rx="26" fill="#fb923c"/>
+
+  <!-- elderly person in chair -->
+  <rect x="266" y="200" width="64" height="76" rx="22" fill="#a855f7"/>
+  <circle cx="298" cy="178" r="29" fill="#f2b28c"/>
+  <path d="M271 168 Q298 138 325 168 Q328 150 298 145 Q268 150 271 168" fill="#cbd5e1"/>
+  <rect x="278" y="264" width="46" height="14" rx="7" fill="#7c3aed" opacity="0.6"/>
+
+  <!-- caregiver kneeling with clipboard -->
+  <rect x="146" y="248" width="62" height="78" rx="20" fill="#0284c7"/>
+  <rect x="148" y="296" width="26" height="46" rx="11" fill="#0369a1"/>
+  <rect x="184" y="296" width="26" height="46" rx="11" fill="#0369a1"/>
+  <circle cx="178" cy="222" r="27" fill="#e8a87c"/>
+  <path d="M154 212 Q178 188 202 212 Q205 198 178 194 Q151 198 154 212" fill="#4b3621"/>
+
+  <!-- clipboard -->
+  <rect x="196" y="252" width="38" height="50" rx="7" fill="#ffffff" stroke="#0284c7" stroke-width="3.5"/>
+  <rect x="208" y="246" width="14" height="10" rx="3" fill="#94a3b8"/>
+  <line x1="204" y1="266" x2="226" y2="266" stroke="#7dd3fc" stroke-width="4" stroke-linecap="round"/>
+  <line x1="204" y1="277" x2="226" y2="277" stroke="#7dd3fc" stroke-width="4" stroke-linecap="round"/>
+  <line x1="204" y1="288" x2="218" y2="288" stroke="#7dd3fc" stroke-width="4" stroke-linecap="round"/>
+
+  <!-- heart accent -->
+  <path d="M332 118 C332 106 347 106 347 118 C347 106 362 106 362 118 C362 132 347 144 347 144 C347 144 332 132 332 118 Z" fill="#f43f5e"/>
+</svg>

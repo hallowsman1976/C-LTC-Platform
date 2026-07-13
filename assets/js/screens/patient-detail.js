@@ -5,7 +5,7 @@
  */
 import { apiCall } from '../api.js';
 import { hasRole } from '../auth.js';
-import { renderCardSkeleton, renderListSkeleton, showToast, confirmDialog, escapeHtml } from '../ui.js';
+import { renderCardSkeleton, renderListSkeleton, renderEmptyState, showToast, confirmDialog, escapeHtml } from '../ui.js';
 import { getUserDirectoryMap } from '../directory.js';
 import { riskBadgeClass, statusBadgeClass } from '../constants.js';
 
@@ -138,11 +138,7 @@ function renderActions(container, patient) {
  */
 function renderVisits(container, visits) {
   if (!visits || visits.length === 0) {
-    container.innerHTML = `
-      <div class="flex flex-col items-center justify-center text-center py-10 px-6 bg-white rounded-2xl shadow-sm">
-        <p class="text-slate-500 text-sm">ยังไม่มีประวัติการเยี่ยมบ้าน</p>
-      </div>
-    `;
+    renderEmptyState(container, { title: 'ยังไม่มีประวัติการเยี่ยมบ้าน' });
     return;
   }
 

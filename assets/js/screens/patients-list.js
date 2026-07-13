@@ -5,7 +5,7 @@
  */
 import { apiCall } from '../api.js';
 import { hasRole } from '../auth.js';
-import { renderListSkeleton, renderPagination, escapeHtml } from '../ui.js';
+import { renderListSkeleton, renderPagination, renderEmptyState, escapeHtml } from '../ui.js';
 import { PATIENT_STATUS_OPTIONS, RISK_LEVEL_OPTIONS, ADL_GROUP_OPTIONS, riskBadgeClass, statusBadgeClass } from '../constants.js';
 
 const PAGE_SIZE = 10;
@@ -95,12 +95,10 @@ export async function renderPatientsList(content) {
  */
 function renderResults(container, items) {
   if (!items || items.length === 0) {
-    container.innerHTML = `
-      <div class="flex flex-col items-center justify-center text-center py-16 px-6 bg-white rounded-2xl shadow-sm">
-        <div class="text-3xl mb-2">🔍</div>
-        <p class="text-slate-500 text-sm">ไม่พบผู้ป่วยที่ตรงกับเงื่อนไขนี้</p>
-      </div>
-    `;
+    renderEmptyState(container, {
+      title: 'ไม่พบผู้ป่วยที่ตรงกับเงื่อนไขนี้',
+      message: 'ลองปรับคำค้นหาหรือตัวกรองดูอีกครั้ง'
+    });
     return;
   }
 
