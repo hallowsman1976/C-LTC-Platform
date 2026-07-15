@@ -11,6 +11,10 @@ import { resizeImageFile, estimateDataUrlBytes, formatBytes } from '../image-uti
 import { createSignaturePad } from '../signature-pad.js';
 import { initThaiAppointmentDatePicker, formatThaiDateDisplay } from '../date-picker.js';
 import {
+  card, sectionTitle, segmentedChoice, yesNoToggle, chipMultiSelect,
+  wireSegmented, wireYesNo, wireChips, toggleArrayValue, cssId
+} from '../form-widgets.js';
+import {
   BARTHEL_ITEMS, INHOMESSS_DOMAIN_ORDER, INHOMESSS_DOMAIN_LABELS,
   NINE_Q_TEXTS, EIGHT_Q_TEXTS, FALL_RISK_TEXTS, CAREGIVER_BURDEN_TEXTS,
   SYMPTOM_OPTIONS, SERVICE_OPTIONS, MEDICATION_OPTIONS, NUTRITION_OPTIONS, EXCRETION_OPTIONS, SLEEP_OPTIONS,
@@ -26,14 +30,6 @@ export const TOTAL_STEPS = STEP_TITLES.length;
 /* ============================================================
  * UI builder helpers ที่ใช้ซ้ำหลายขั้นตอน
  * ============================================================ */
-
-function card(innerHtml, extraClass = '') {
-  return `<div class="bg-white rounded-2xl shadow-sm p-4 mb-3 ${extraClass}">${innerHtml}</div>`;
-}
-
-function sectionTitle(text) {
-  return `<p class="text-sm font-semibold text-slate-700 mb-3">${escapeHtml(text)}</p>`;
-}
 
 function textField({ id, label, value, type = 'text', placeholder = '' }) {
   return `
@@ -55,76 +51,6 @@ function selectField({ id, label, value, options, placeholder }) {
       </select>
     </div>
   `;
-}
-
-/** แถบเลือกตัวเลข 0..max แบบปุ่ม (ใช้กับ Barthel และ Stage แผล) */
-function segmentedChoice({ name, options, selectedValue }) {
-  return `
-    <div class="flex flex-wrap gap-2" data-segmented="${escapeHtml(name)}">
-      ${options.map((opt) => `
-        <button type="button" data-seg-value="${escapeHtml(String(opt.v))}"
-          class="px-3 py-2 rounded-xl border text-xs font-medium ${String(selectedValue) === String(opt.v) ? 'bg-sky-600 border-sky-600 text-white' : 'bg-white border-slate-200 text-slate-600'}">
-          ${escapeHtml(opt.l)}
-        </button>
-      `).join('')}
-    </div>
-  `;
-}
-
-/** ปุ่ม ใช่/ไม่ใช่ สองปุ่ม คืน HTML — ใช้กับข้อคำถามแบบ boolean ทุกจุด (FallRisk/CaregiverBurden/INHOMESSS/2Q/8Q) */
-function yesNoToggle({ name, value, yesLabel = 'ใช่', noLabel = 'ไม่ใช่' }) {
-  return `
-    <div class="flex gap-2" data-yesno="${escapeHtml(name)}">
-      <button type="button" data-yesno-value="true" class="flex-1 py-2 rounded-xl border text-xs font-medium ${value === true ? 'bg-rose-600 border-rose-600 text-white' : 'bg-white border-slate-200 text-slate-600'}">${escapeHtml(yesLabel)}</button>
-      <button type="button" data-yesno-value="false" class="flex-1 py-2 rounded-xl border text-xs font-medium ${value === false ? 'bg-emerald-600 border-emerald-600 text-white' : 'bg-white border-slate-200 text-slate-600'}">${escapeHtml(noLabel)}</button>
-    </div>
-  `;
-}
-
-function chipMultiSelect({ name, options, selectedValues }) {
-  return `
-    <div class="flex flex-wrap gap-2" data-chips="${escapeHtml(name)}">
-      ${options.map((opt) => `
-        <button type="button" data-chip-value="${escapeHtml(opt)}"
-          class="px-3 py-1.5 rounded-full border text-xs font-medium ${(selectedValues || []).includes(opt) ? 'bg-sky-600 border-sky-600 text-white' : 'bg-white border-slate-200 text-slate-600'}">
-          ${escapeHtml(opt)}
-        </button>
-      `).join('')}
-    </div>
-  `;
-}
-
-function wireSegmented(container, name, onSelect) {
-  const group = container.querySelector(`[data-segmented="${cssId(name)}"]`);
-  if (!group) return;
-  group.querySelectorAll('[data-seg-value]').forEach((btn) => {
-    btn.addEventListener('click', () => onSelect(Number(btn.dataset.segValue)));
-  });
-}
-
-function wireYesNo(container, name, onSelect) {
-  const group = container.querySelector(`[data-yesno="${cssId(name)}"]`);
-  if (!group) return;
-  group.querySelectorAll('[data-yesno-value]').forEach((btn) => {
-    btn.addEventListener('click', () => onSelect(btn.dataset.yesnoValue === 'true'));
-  });
-}
-
-function wireChips(container, name, onToggle) {
-  const group = container.querySelector(`[data-chips="${cssId(name)}"]`);
-  if (!group) return;
-  group.querySelectorAll('[data-chip-value]').forEach((btn) => {
-    btn.addEventListener('click', () => onToggle(btn.dataset.chipValue));
-  });
-}
-
-function cssId(value) {
-  return String(value).replace(/[^a-zA-Z0-9_-]/g, '\\$&');
-}
-
-function toggleArrayValue(arr, value) {
-  const list = arr || [];
-  return list.includes(value) ? list.filter((v) => v !== value) : [...list, value];
 }
 
 /* ============================================================

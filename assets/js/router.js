@@ -17,6 +17,9 @@ import { renderPatientDetail } from './screens/patient-detail.js';
 import { renderCarePlan } from './screens/care-plan.js';
 import { renderAssignCareTeam } from './screens/assign-care-team.js';
 import { renderVisitForm } from './screens/visit-form.js';
+import { renderAssessmentsHub, renderPatientAssessments } from './screens/assessments-hub.js';
+import { renderAssessmentForm } from './screens/assessment-form.js';
+import { renderAssessmentDetail } from './screens/assessment-detail.js';
 import { renderReports } from './screens/reports.js';
 import { renderMap } from './screens/map.js';
 import { initSyncManager } from './offline/sync.js';
@@ -37,7 +40,12 @@ const routeDefs = [
   { pattern: '/patients/:id/care-plan', title: 'Care Plan', render: renderCarePlan },
   { pattern: '/patients/:id/assign', title: 'มอบหมายทีมดูแล', roles: ['ADMIN', 'CM'], render: renderAssignCareTeam },
   { pattern: '/patients/:id', title: 'รายละเอียดผู้ป่วย', render: renderPatientDetail },
-  { pattern: '/assessments', title: 'แบบประเมิน', render: renderComingSoon },
+  { pattern: '/assessments', title: 'แบบประเมิน', render: renderAssessmentsHub },
+  { pattern: '/assessments/:patientId', title: 'แบบประเมินของผู้ป่วย', render: renderPatientAssessments },
+  // VIEWER ดูประวัติได้แต่บันทึกไม่ได้ — ตรงกับ resolveAssessmentContext_ ฝั่ง backend ที่ปฏิเสธ VIEWER
+  { pattern: '/assessments/:patientId/:type', title: 'บันทึกแบบประเมิน', roles: ['ADMIN', 'CM', 'CG'], render: renderAssessmentForm },
+  // ดูผลย้อนหลัง (อ่านอย่างเดียว) — ไม่จำกัด role เพราะ assessments.get อนุญาต VIEWER ด้วย
+  { pattern: '/assessments/:patientId/:type/:assessmentId', title: 'ผลแบบประเมิน', render: renderAssessmentDetail },
   { pattern: '/reports', title: 'รายงาน', render: renderReports },
   { pattern: '/map', title: 'แผนที่ผู้ป่วย', render: renderMap },
   { pattern: '/settings', title: 'ตั้งค่า', render: renderSettings }
@@ -144,17 +152,6 @@ async function renderRoute() {
   } finally {
     setLoading(false);
   }
-}
-
-/** @param {HTMLElement} content */
-async function renderComingSoon(content) {
-  content.innerHTML = `
-    <div class="flex flex-col items-center justify-center text-center py-20 px-6">
-      <div class="text-4xl mb-3">🚧</div>
-      <h2 class="text-lg font-semibold text-slate-700 mb-1">แบบประเมิน</h2>
-      <p class="text-slate-500 text-sm">ฟีเจอร์นี้อยู่ระหว่างการพัฒนาในเฟสถัดไป</p>
-    </div>
-  `;
 }
 
 /** @param {HTMLElement} content */

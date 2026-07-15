@@ -172,6 +172,19 @@ export function formatThaiDateDisplay(isoValue, fallback = '-') {
 }
 
 /**
+ * แปลง ISO datetime เต็ม (เช่น CreatedAt ที่ backend เก็บ) เป็น "10 ก.ค. 2569 09:00"
+ * toLocaleString('th-TH') แปลงปีเป็น พ.ศ. ให้เองอยู่แล้ว จึงไม่ต้องบวก 543 ซ้ำ
+ * @param {string} isoString
+ * @param {string} [fallback]
+ * @return {string}
+ */
+export function formatThaiDateTime(isoString, fallback = '-') {
+  const date = new Date(isoString);
+  if (Number.isNaN(date.getTime())) return fallback;
+  return date.toLocaleString('th-TH', { dateStyle: 'medium', timeStyle: 'short' });
+}
+
+/**
  * ปีเกิด: ย้อนหลังได้ 120 ปี และห้ามเลือกอนาคต (ฟิลด์บังคับ จึงไม่มีปุ่มล้าง)
  * @param {HTMLInputElement|null} inputEl
  * @return {Object|null}
