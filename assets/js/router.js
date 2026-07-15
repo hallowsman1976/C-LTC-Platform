@@ -24,6 +24,7 @@ import { renderReports } from './screens/reports.js';
 import { renderMap } from './screens/map.js';
 import { renderAdminHub } from './screens/admin/hub.js';
 import { renderAdminUsers } from './screens/admin/users.js';
+import { renderAdminAssignments } from './screens/admin/assignments.js';
 import { renderAdminAuditLog } from './screens/admin/audit-log.js';
 import { renderAdminNotifications } from './screens/admin/notifications.js';
 import { initSyncManager } from './offline/sync.js';
@@ -56,6 +57,7 @@ const routeDefs = [
   // /admin — ADMIN เท่านั้น ตรงกับ roles ของทุก action admin.* ฝั่ง backend (Router.gs)
   { pattern: '/admin', title: 'ผู้ดูแลระบบ', roles: ['ADMIN'], render: renderAdminHub },
   { pattern: '/admin/users', title: 'จัดการผู้ใช้', roles: ['ADMIN'], render: renderAdminUsers },
+  { pattern: '/admin/assignments', title: 'มอบหมายทีมดูแล', roles: ['ADMIN'], render: renderAdminAssignments },
   { pattern: '/admin/audit-log', title: 'Audit Log', roles: ['ADMIN'], render: renderAdminAuditLog },
   { pattern: '/admin/notifications', title: 'การแจ้งเตือน', roles: ['ADMIN'], render: renderAdminNotifications }
 ];
