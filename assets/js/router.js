@@ -22,6 +22,10 @@ import { renderAssessmentForm } from './screens/assessment-form.js';
 import { renderAssessmentDetail } from './screens/assessment-detail.js';
 import { renderReports } from './screens/reports.js';
 import { renderMap } from './screens/map.js';
+import { renderAdminHub } from './screens/admin/hub.js';
+import { renderAdminUsers } from './screens/admin/users.js';
+import { renderAdminAuditLog } from './screens/admin/audit-log.js';
+import { renderAdminNotifications } from './screens/admin/notifications.js';
 import { initSyncManager } from './offline/sync.js';
 
 const DEFAULT_ROUTE = '/dashboard';
@@ -48,7 +52,12 @@ const routeDefs = [
   { pattern: '/assessments/:patientId/:type/:assessmentId', title: 'ผลแบบประเมิน', render: renderAssessmentDetail },
   { pattern: '/reports', title: 'รายงาน', render: renderReports },
   { pattern: '/map', title: 'แผนที่ผู้ป่วย', render: renderMap },
-  { pattern: '/settings', title: 'ตั้งค่า', render: renderSettings }
+  { pattern: '/settings', title: 'ตั้งค่า', render: renderSettings },
+  // /admin — ADMIN เท่านั้น ตรงกับ roles ของทุก action admin.* ฝั่ง backend (Router.gs)
+  { pattern: '/admin', title: 'ผู้ดูแลระบบ', roles: ['ADMIN'], render: renderAdminHub },
+  { pattern: '/admin/users', title: 'จัดการผู้ใช้', roles: ['ADMIN'], render: renderAdminUsers },
+  { pattern: '/admin/audit-log', title: 'Audit Log', roles: ['ADMIN'], render: renderAdminAuditLog },
+  { pattern: '/admin/notifications', title: 'การแจ้งเตือน', roles: ['ADMIN'], render: renderAdminNotifications }
 ];
 
 function getContentEl() {
@@ -166,6 +175,13 @@ async function renderSettings(content) {
         <div class="flex justify-between"><span class="text-slate-400">ชื่อผู้ใช้</span><span class="text-slate-700 font-medium">${escapeHtml((user && user.username) || '-')}</span></div>
       </div>
 
+      ${hasRole('ADMIN') ? `
+        <a href="#/admin" class="block bg-white rounded-2xl shadow-sm p-4 mb-3 active:bg-slate-50">
+          <p class="text-sm font-semibold text-slate-800">ผู้ดูแลระบบ</p>
+          <p class="text-xs text-slate-400 mt-0.5">จัดการผู้ใช้ · Audit Log · การแจ้งเตือน</p>
+        </a>
+      ` : ''}
+
       <form id="line-id-form" class="bg-white rounded-2xl shadow-sm p-4 mb-3 space-y-3">
         <div>
           <label class="block text-xs font-medium text-slate-500 mb-1">ผูก LINE User ID (รับการแจ้งเตือนความเสี่ยง/นัดหมาย)</label>
@@ -212,6 +228,14 @@ function renderSidebarUser() {
   const el = document.getElementById('sidebar-user');
   const user = getCurrentUser();
   if (!el || !user) return;
+
+  // เมนู ADMIN ใน index.html ตั้ง class="hidden" ไว้ตายตัว เปิดที่นี่เฉพาะ ADMIN
+  // (เป็นแค่การซ่อน UI ไม่ใช่การกันสิทธิ์ — ตัวกันจริงคือ roles ใน routeDefs + roles ฝั่ง backend)
+  const adminNav = document.getElementById('nav-admin');
+  if (adminNav && hasRole('ADMIN')) {
+    adminNav.classList.remove('hidden');
+    adminNav.classList.add('flex');
+  }
 
   el.innerHTML = `
     <p class="text-sm font-medium text-slate-700 truncate">${escapeHtml(user.name)}</p>

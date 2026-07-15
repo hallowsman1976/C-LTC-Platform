@@ -66,6 +66,12 @@
           <svg class="w-5 h-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.5v2.4M12 19.1v2.4M21.5 12h-2.4M4.9 12H2.5M18.4 5.6l-1.7 1.7M7.3 16.7l-1.7 1.7M18.4 18.4l-1.7-1.7M7.3 7.3 5.6 5.6"/></svg>
           <span>ตั้งค่า</span>
         </a>
+        <!-- เมนู ADMIN — ซ่อนไว้ก่อนเสมอ router.js จะเปิดให้เฉพาะ role ADMIN (ดู renderSidebarUser)
+             ไม่ได้เพิ่มใน bottom nav ของมือถือเพราะเป็น grid-cols-4 ใส่ตัวที่ 5 แล้วเลย์เอาต์พัง — มือถือเข้าผ่านหน้าตั้งค่าแทน -->
+        <a href="#/admin" data-route="/admin" id="nav-admin" class="hidden items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-slate-400 hover:bg-slate-50">
+          <svg class="w-5 h-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 3v5.5c0 4.2-2.9 7.9-7 9-4.1-1.1-7-4.8-7-9V6l7-3Z"/><path d="M9.5 12.2l1.8 1.8 3.4-3.6"/></svg>
+          <span>ผู้ดูแลระบบ</span>
+        </a>
       </nav>
       <div id="sidebar-user" class="px-5 py-4 border-t border-slate-100 text-xs text-slate-400"></div>
     </aside>
