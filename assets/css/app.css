@@ -48,6 +48,45 @@ button:focus-visible {
 }
 
 /**
+ * flatpickr ปฏิทิน พ.ศ. (ดู assets/js/date-picker.js)
+ * ช่องปีเดิมของ flatpickr เป็น ค.ศ. ตายตัวแก้ไม่ได้ จึงซ่อนไว้แล้วใช้ <select> ปี พ.ศ. ที่สร้างเองแทน
+ */
+.flatpickr-calendar {
+  font-family: 'Noto Sans Thai', 'Segoe UI', sans-serif;
+}
+
+.flatpickr-calendar .numInputWrapper.ltc-fp-year-hidden {
+  display: none;
+}
+
+select.ltc-fp-year,
+.flatpickr-monthDropdown-months {
+  font-size: 0.875rem;
+  font-weight: 600;
+  border: 0;
+  border-radius: 0.5rem;
+  padding: 0.125rem 0.25rem;
+  background: transparent;
+  cursor: pointer;
+}
+
+select.ltc-fp-year {
+  color: inherit;
+  margin-left: 0.25rem;
+}
+
+select.ltc-fp-year:focus-visible,
+.flatpickr-monthDropdown-months:focus-visible {
+  outline: 2px solid #0284c7;
+  outline-offset: 1px;
+}
+
+/* select ในหัวปฏิทินสูงเท่าเดิมไม่ได้ถ้าไม่บีบ padding ของ month nav ลง */
+.flatpickr-months .flatpickr-month {
+  height: 2.25rem;
+}
+
+/**
  * Print/PDF-friendly (Phase 9) — ซ่อน chrome ของแอป (sidebar/header/bottom nav/banner/ปุ่มต่าง ๆ)
  * เหลือแต่เนื้อหารายงานเวลาสั่งพิมพ์หรือ "บันทึกเป็น PDF" จาก dialog พิมพ์ของเบราว์เซอร์
  * ใช้คู่กับ Tailwind class ปกติ (ไม่ต้อง JS เพิ่ม) — องค์ประกอบใดที่ไม่ควรพิมพ์ให้ใส่ class "no-print"

@@ -9,6 +9,7 @@
 import { escapeHtml, showToast } from '../ui.js';
 import { resizeImageFile, estimateDataUrlBytes, formatBytes } from '../image-utils.js';
 import { createSignaturePad } from '../signature-pad.js';
+import { initThaiAppointmentDatePicker, formatThaiDateDisplay } from '../date-picker.js';
 import {
   BARTHEL_ITEMS, INHOMESSS_DOMAIN_ORDER, INHOMESSS_DOMAIN_LABELS,
   NINE_Q_TEXTS, EIGHT_Q_TEXTS, FALL_RISK_TEXTS, CAREGIVER_BURDEN_TEXTS,
@@ -448,7 +449,7 @@ function renderStep8(container, state, ctx) {
       ${sectionTitle('คำแนะนำ / แผนติดตาม')}
       <textarea id="vf-notes" rows="3" placeholder="คำแนะนำสำหรับผู้ดูแล/แผนติดตามครั้งถัดไป"
         class="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm mb-3 focus:outline-none focus:ring-2 focus:ring-sky-500">${escapeHtml(state.visit.notes)}</textarea>
-      ${textField({ id: 'vf-nextvisit', label: 'วันนัดเยี่ยมถัดไป', value: state.visit.nextVisitDate, type: 'date' })}
+      ${textField({ id: 'vf-nextvisit', label: 'วันนัดเยี่ยมถัดไป', value: state.visit.nextVisitDate, placeholder: 'เลือกวันนัด (พ.ศ.)' })}
     `)}
   `;
 
@@ -465,6 +466,10 @@ function renderStep8(container, state, ctx) {
   });
   container.querySelector('#vf-notes').addEventListener('input', (e) => ctx.setNested('visit', { notes: e.target.value }));
   container.querySelector('#vf-nextvisit').addEventListener('input', (e) => ctx.setNested('visit', { nextVisitDate: e.target.value }));
+  // ขั้นนี้ rerender ทุกครั้งที่กดชิป/yes-no → container.innerHTML ถูกล้างทิ้ง แต่ปฏิทินของ flatpickr ไปแขวนไว้
+  // ใต้ document.body จึงค้างเป็น orphan สะสมไปเรื่อย ๆ ถ้าไม่ destroy ตัวเก่าก่อนผูกตัวใหม่
+  if (container.ltcNextVisitPicker) container.ltcNextVisitPicker.destroy();
+  container.ltcNextVisitPicker = initThaiAppointmentDatePicker(container.querySelector('#vf-nextvisit'));
 }
 
 /* ============================================================
@@ -599,7 +604,7 @@ function renderStep10(container, state) {
       ${sectionTitle('ผู้ดูแลและบริการ')}
       ${summaryRow('ข้อภาระผู้ดูแลที่พบ', `${cgBurdenCount} / 5`)}
       ${summaryRow('บริการที่ให้', (state.visit.servicesGiven || []).join(', '))}
-      ${summaryRow('นัดเยี่ยมถัดไป', state.visit.nextVisitDate)}
+      ${summaryRow('นัดเยี่ยมถัดไป', formatThaiDateDisplay(state.visit.nextVisitDate, 'ไม่ได้นัด'))}
     `)}
     ${card(`
       ${sectionTitle('รูปถ่าย/ลายเซ็น')}

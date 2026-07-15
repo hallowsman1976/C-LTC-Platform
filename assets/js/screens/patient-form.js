@@ -15,6 +15,7 @@ import { getCurrentUser, hasRole } from '../auth.js';
 import { renderCardSkeleton, showToast, escapeHtml } from '../ui.js';
 import { getUsersByRole } from '../directory.js';
 import { isNonEmptyString, isValidThaiCid, isValidIsoDate, formatCidInput } from '../validation.js';
+import { initThaiBirthDatePicker, initThaiAppointmentDatePicker } from '../date-picker.js';
 import { GENDER_OPTIONS, PATIENT_STATUS_OPTIONS } from '../constants.js';
 
 /**
@@ -44,6 +45,9 @@ export async function renderPatientForm(content, params) {
 
   const form = bodyEl.querySelector('#pf-form');
   const errorEl = bodyEl.querySelector('#pf-error');
+
+  initThaiBirthDatePicker(form.querySelector('#pf-birthdate'));
+  initThaiAppointmentDatePicker(form.querySelector('#pf-nextvisit'));
 
   form.addEventListener('submit', async (event) => {
     event.preventDefault();
@@ -153,7 +157,7 @@ function buildFormHtml(ctx) {
         </div>
         <div>
           <label class="block text-xs font-medium text-slate-500 mb-1">วันเกิด *</label>
-          <input id="pf-birthdate" name="birthDate" type="date" value="${escapeHtml(v.birthDate || '')}"
+          <input id="pf-birthdate" name="birthDate" type="text" value="${escapeHtml(v.birthDate || '')}" placeholder="เลือกวันเกิด (พ.ศ.)"
             class="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500" />
         </div>
         <div>${cidField}</div>
@@ -185,7 +189,7 @@ function buildFormHtml(ctx) {
       <div class="grid grid-cols-2 gap-3">
         <div>
           <label class="block text-xs font-medium text-slate-500 mb-1">วันนัดเยี่ยมถัดไป</label>
-          <input id="pf-nextvisit" name="nextVisitDate" type="date" value="${escapeHtml(v.nextVisitDate || '')}"
+          <input id="pf-nextvisit" name="nextVisitDate" type="text" value="${escapeHtml(v.nextVisitDate || '')}" placeholder="เลือกวันนัด (พ.ศ.)"
             class="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500" />
         </div>
         ${statusField}

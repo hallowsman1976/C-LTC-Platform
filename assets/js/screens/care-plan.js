@@ -6,6 +6,7 @@
 import { apiCall } from '../api.js';
 import { hasRole } from '../auth.js';
 import { renderCardSkeleton, renderEmptyState, showToast, confirmDialog, promptDialog, escapeHtml } from '../ui.js';
+import { initThaiAppointmentDatePicker, formatThaiDateDisplay } from '../date-picker.js';
 import { carePlanStatusLabel, carePlanStatusBadgeClass } from '../constants.js';
 
 /**
@@ -118,7 +119,7 @@ function renderPlanCard(slot, plan, ctx) {
     <div class="bg-white rounded-2xl shadow-sm p-4">
       <div class="flex items-center justify-between mb-2">
         <span class="text-xs font-medium px-2 py-1 rounded-full ${carePlanStatusBadgeClass(plan.status)}">${escapeHtml(carePlanStatusLabel(plan.status))}</span>
-        <span class="text-xs text-slate-400">${escapeHtml(plan.reviewDate ? 'นัดทบทวน ' + plan.reviewDate : '')}</span>
+        <span class="text-xs text-slate-400">${escapeHtml(plan.reviewDate ? 'นัดทบทวน ' + formatThaiDateDisplay(plan.reviewDate) : '')}</span>
       </div>
       ${renderPlanSection('ปัญหา', plan.problems)}
       ${renderPlanSection('เป้าหมาย', plan.goals)}
@@ -249,7 +250,7 @@ function renderPlanForm(container, existingPlan, ctx) {
       </div>
       <div>
         <label class="block text-xs font-medium text-slate-500 mb-1">วันนัดทบทวนแผน</label>
-        <input id="cp-reviewdate" type="date" value="${escapeHtml(v.reviewDate || '')}"
+        <input id="cp-reviewdate" type="text" value="${escapeHtml(v.reviewDate || '')}" placeholder="เลือกวันนัด (พ.ศ.)"
           class="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-sky-500" />
       </div>
       <div class="flex gap-2">
@@ -261,6 +262,8 @@ function renderPlanForm(container, existingPlan, ctx) {
 
   const form = container.querySelector('#cp-form');
   const errorEl = container.querySelector('#cp-form-error');
+
+  initThaiAppointmentDatePicker(form.querySelector('#cp-reviewdate'));
 
   container.querySelector('#cp-form-cancel').addEventListener('click', () => ctx.onCancel());
 
