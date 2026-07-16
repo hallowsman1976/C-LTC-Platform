@@ -145,12 +145,36 @@ function findRecordByKey_(sheetName, keyColumn, keyValue) {
 }
 
 /**
+ * ขยายชีตให้มีแถวพอสำหรับเขียนถึงแถวที่ต้องการ แล้วตั้ง format ให้แถวใหม่ทั้งหมด
+ *
+ * ชีตไม่ได้จองแถวว่างไว้ล่วงหน้าแล้ว (ดู trimTrailingBlankRows_ ใน Setup.gs) — แถวจะเกิดตอนมีข้อมูลจริง
+ * เท่านั้น ถ้าไม่แทรกแถวก่อน getRange() จะ throw เพราะชี้เกิน maxRows
+ *
+ * ตั้ง format ผ่าน applyRowFormats_ ตรง ๆ แทนที่จะหวังพึ่งการ inherit จากแถวบน เพราะตอนชีตยังว่าง
+ * แถวที่แทรกใต้ header จะ inherit format ของ "header" (ตัวหนา พื้นเทา และไม่ใช่ Plain Text) มาแทน
+ * ซึ่งทำให้คอลัมน์วันที่โดน auto-convert เป็น Date object ทันทีตั้งแต่ผู้ป่วยคนแรก
+ *
+ * @param {GoogleAppsScript.Spreadsheet.Sheet} sheet
+ * @param {string} sheetName
+ * @param {number} startRow แถวแรกที่จะเขียน
+ * @param {number} numRows จำนวนแถวที่จะเขียน
+ */
+function ensureRowCapacity_(sheet, sheetName, startRow, numRows) {
+  var neededLastRow = startRow + numRows - 1;
+  var maxRows = sheet.getMaxRows();
+  if (neededLastRow > maxRows) {
+    sheet.insertRowsAfter(maxRows, neededLastRow - maxRows);
+  }
+  applyRowFormats_(sheet, getSheetDefinition_(sheetName), startRow, numRows);
+}
+
+/**
  * เพิ่มแถวใหม่ 1 แถว (append) ภายใต้ lock
  *
  * ใช้ getRange().setValues() แทน sheet.appendRow() โดยเจตนา — appendRow() ไม่เคารพ number format
- * ที่ตั้งไว้ล่วงหน้าบนเซลล์ปลายทาง (เช่น Plain Text '@' ที่ applyPlainTextColumns_ ตั้งไว้ใน Setup.gs)
- * ทำให้ string วันที่ "YYYY-MM-DD" ถูก Sheets auto-convert เป็น Date object ทุกครั้งที่ appendRow
- * ทั้งที่ updateRecord_ (ซึ่งใช้ setValues() อยู่แล้ว) ไม่มีปัญหานี้ — จึงรวมมาใช้ setValues() ให้ตรงกัน
+ * ที่ตั้งไว้บนเซลล์ปลายทาง (เช่น Plain Text '@' ที่ applyRowFormats_ ตั้งให้) ทำให้ string วันที่
+ * "YYYY-MM-DD" ถูก Sheets auto-convert เป็น Date object ทุกครั้งที่ appendRow ทั้งที่ updateRecord_
+ * (ซึ่งใช้ setValues() อยู่แล้ว) ไม่มีปัญหานี้ — จึงรวมมาใช้ setValues() ให้ตรงกัน
  *
  * @param {string} sheetName
  * @param {Object} record
@@ -162,6 +186,7 @@ function appendRecord_(sheetName, record) {
     var headers = getHeaderRow_(sheet);
     var row = recordToRow_(headers, record);
     var rowIndex = sheet.getLastRow() + 1;
+    ensureRowCapacity_(sheet, sheetName, rowIndex, 1);   // ต้องมาก่อน setValues เสมอ (format ก่อนค่า)
     sheet.getRange(rowIndex, 1, 1, headers.length).setValues([row]);
     return rowToRecord_(headers, row, rowIndex);
   });
@@ -180,6 +205,7 @@ function appendRecords_(sheetName, records) {
     var headers = getHeaderRow_(sheet);
     var rows = records.map(function (r) { return recordToRow_(headers, r); });
     var startRow = sheet.getLastRow() + 1;
+    ensureRowCapacity_(sheet, sheetName, startRow, rows.length);
     sheet.getRange(startRow, 1, rows.length, headers.length).setValues(rows);
     return rows.map(function (row, i) { return rowToRecord_(headers, row, startRow + i); });
   });

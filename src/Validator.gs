@@ -32,9 +32,10 @@ function generateShortId_(prefix) {
  * ป้องกันด้วยการ prefix single quote ให้ Sheets เก็บเป็น literal text แทนการรันเป็นสูตร
  *
  * หมายเหตุ: string รูปแบบวันที่ "YYYY-MM-DD" ก็ถูก Google Sheets auto-convert เป็น Date object ได้เช่นกัน
- * แต่ป้องกันด้วยวิธีอื่นแทน (ตั้ง column format เป็น Plain Text ผ่าน applyPlainTextColumns_ ใน Setup.gs
- * ร่วมกับเขียนด้วย Range.setValues() แทน sheet.appendRow() ใน SheetService.gs — appendRow() ไม่เคารพ
- * number format ที่ตั้งไว้ล่วงหน้า ทำให้ยังโดน auto-convert อยู่ดีถ้าใช้ appendRow())
+ * แต่ป้องกันด้วยวิธีอื่นแทน (ตั้ง column format เป็น Plain Text ผ่าน applyRowFormats_ ใน Setup.gs ซึ่ง
+ * ensureRowCapacity_ ใน SheetService.gs เรียกให้ทุกครั้งที่แทรกแถวใหม่ "ก่อน" เขียนค่าลงไป ร่วมกับเขียนด้วย
+ * Range.setValues() แทน sheet.appendRow() — appendRow() ไม่เคารพ number format ที่ตั้งไว้ ทำให้ยังโดน
+ * auto-convert อยู่ดีถ้าใช้ appendRow())
  * ============================================================ */
 
 var FORMULA_INJECTION_PATTERN_ = /^[=+\-@\t\r]/;

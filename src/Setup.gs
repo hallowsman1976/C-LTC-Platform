@@ -10,7 +10,6 @@
 var SYSTEM_VERSION_ = '1.0.0';
 var DEFAULT_SPREADSHEET_NAME_ = 'LTC_SmartCare_DB';
 var DRIVE_ROOT_FOLDER_NAME_ = 'LTC_SmartCare_Files';
-var VALIDATION_ROW_COUNT_ = 2000;
 
 /** enum ที่ใช้ซ้ำหลายชีต */
 var ENUM_ROLE_ = ['ADMIN', 'CM', 'CG', 'VIEWER'];
@@ -240,10 +239,27 @@ function ensureSheet_(ss, definition) {
     created = true;
   }
   applyHeaders_(sheet, definition.headers);
-  applyValidations_(sheet, definition);
-  applyPlainTextColumns_(sheet, definition);
+  trimTrailingBlankRows_(sheet);
+  applyRowFormats_(sheet, definition, 2, Math.max(sheet.getLastRow() - 1, 0));
   sheet.setFrozenRows(1);
   return created;
+}
+
+/**
+ * ตัดแถวว่างท้ายชีตทิ้งให้เหลือแค่ header + แถวที่มีข้อมูลจริง
+ *
+ * เดิมระบบขยายทุกชีตไว้ล่วงหน้า 2,000 แถวเพื่อตั้ง format/validation รอไว้ ทำให้ชีตมีแถวว่างค้างเต็มไปหมด
+ * ตอนนี้เปลี่ยนเป็น "แถวเกิดตอนมีข้อมูล" แทน — appendRecord_/appendRecords_ ใน SheetService.gs จะแทรกแถว
+ * และตั้ง format ให้เองตอนเขียน (ดู ensureRowCapacity_ + applyRowFormats_ ที่นั่น)
+ *
+ * @param {GoogleAppsScript.Spreadsheet.Sheet} sheet
+ */
+function trimTrailingBlankRows_(sheet) {
+  var lastRow = Math.max(sheet.getLastRow(), 1);   // อย่างน้อยต้องเหลือแถว header ไว้เสมอ
+  var maxRows = sheet.getMaxRows();
+  if (maxRows > lastRow) {
+    sheet.deleteRows(lastRow + 1, maxRows - lastRow);
+  }
 }
 
 /**
@@ -268,55 +284,55 @@ function applyHeaders_(sheet, headers) {
 }
 
 /**
- * ตั้ง Data Validation (dropdown list) ให้คอลัมน์ enum ตาม definition.validations
- * ขยายจำนวนแถวของชีตให้ครอบคลุม VALIDATION_ROW_COUNT_ แถวไว้ล่วงหน้า
- * @param {GoogleAppsScript.Spreadsheet.Sheet} sheet
- * @param {Object} definition
+ * หา definition ของชีตตามชื่อ — ใช้โดย SheetService.gs ตอนต้องตั้ง format ให้แถวที่เพิ่งแทรกใหม่
+ * @param {string} sheetName
+ * @return {Object|null}
  */
-function applyValidations_(sheet, definition) {
-  if (!definition.validations || definition.validations.length === 0) return;
-
-  if (sheet.getMaxRows() < VALIDATION_ROW_COUNT_) {
-    sheet.insertRowsAfter(sheet.getMaxRows(), VALIDATION_ROW_COUNT_ - sheet.getMaxRows());
+function getSheetDefinition_(sheetName) {
+  for (var i = 0; i < SHEET_DEFINITIONS_.length; i++) {
+    if (SHEET_DEFINITIONS_[i].name === sheetName) return SHEET_DEFINITIONS_[i];
   }
-
-  var headers = getHeaderRow_(sheet);
-  var maxRows = sheet.getMaxRows();
-
-  definition.validations.forEach(function (rule) {
-    var colIndex = headers.indexOf(rule.column) + 1;
-    if (colIndex === 0) return; // ไม่พบคอลัมน์นี้ ข้าม (กันพลาดจาก schema ไม่ตรงกัน)
-    var range = sheet.getRange(2, colIndex, maxRows - 1, 1);
-    var validation = SpreadsheetApp.newDataValidation()
-      .requireValueInList(rule.values, true)
-      .setAllowInvalid(false)
-      .build();
-    range.setDataValidation(validation);
-  });
+  return null;
 }
 
 /**
- * บังคับคอลัมน์ที่เก็บ string วันที่ (YYYY-MM-DD) ให้เป็น Plain Text เสมอ
- * กัน Google Sheets ตีความ string วันที่เป็น Date object อัตโนมัติตอนเขียน (ทำให้อ่านกลับมาไม่ตรงกับที่ส่งเข้ามา
- * และ isValidIsoDate_/computeAge_ พังเพราะเจอ Date object แทน string)
+ * ตั้ง Data Validation (dropdown) + Plain Text ให้ "ช่วงแถวที่ระบุ" เท่านั้น
+ *
+ * เดิมตั้งรวดเดียวถึงแถว 2000 ตอน setup แล้วรอให้ข้อมูลไหลลงมาทับ พอเลิกจองแถวล่วงหน้าแล้ว จึงต้อง
+ * ตั้ง format ทุกครั้งที่มีแถวใหม่เกิดขึ้นแทน — และต้องตั้ง "ก่อน" เขียนค่าลงไปเสมอ เพราะถ้าเขียน
+ * "2026-07-16" ลงเซลล์ที่ยังไม่ได้เป็น Plain Text ทาง Sheets จะแปลงเป็น Date object ทันที การมาตั้ง
+ * format ทีหลังไม่ช่วยแล้ว (ค่าที่เก็บกลายเป็น serial number ไปแล้ว) และ isValidIsoDate_ ที่เช็ค
+ * typeof v === 'string' จะ reject ทุกแถวที่โดนแปลง
+ *
  * @param {GoogleAppsScript.Spreadsheet.Sheet} sheet
- * @param {Object} definition
+ * @param {Object|null} definition
+ * @param {number} startRow แถวเริ่มต้น (1-indexed)
+ * @param {number} numRows จำนวนแถว — ถ้า <= 0 ไม่ทำอะไร
  */
-function applyPlainTextColumns_(sheet, definition) {
-  if (!definition.plainTextColumns || definition.plainTextColumns.length === 0) return;
-
-  if (sheet.getMaxRows() < VALIDATION_ROW_COUNT_) {
-    sheet.insertRowsAfter(sheet.getMaxRows(), VALIDATION_ROW_COUNT_ - sheet.getMaxRows());
-  }
+function applyRowFormats_(sheet, definition, startRow, numRows) {
+  if (!definition || numRows <= 0) return;
 
   var headers = getHeaderRow_(sheet);
-  var maxRows = sheet.getMaxRows();
 
-  definition.plainTextColumns.forEach(function (columnName) {
-    var colIndex = headers.indexOf(columnName) + 1;
-    if (colIndex === 0) return;
-    sheet.getRange(2, colIndex, maxRows - 1, 1).setNumberFormat('@');
-  });
+  if (definition.plainTextColumns) {
+    definition.plainTextColumns.forEach(function (columnName) {
+      var colIndex = headers.indexOf(columnName) + 1;
+      if (colIndex === 0) return;
+      sheet.getRange(startRow, colIndex, numRows, 1).setNumberFormat('@');
+    });
+  }
+
+  if (definition.validations) {
+    definition.validations.forEach(function (rule) {
+      var colIndex = headers.indexOf(rule.column) + 1;
+      if (colIndex === 0) return; // ไม่พบคอลัมน์นี้ ข้าม (กันพลาดจาก schema ไม่ตรงกัน)
+      var validation = SpreadsheetApp.newDataValidation()
+        .requireValueInList(rule.values, true)
+        .setAllowInvalid(false)
+        .build();
+      sheet.getRange(startRow, colIndex, numRows, 1).setDataValidation(validation);
+    });
+  }
 }
 
 /**
