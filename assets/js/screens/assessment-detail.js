@@ -11,12 +11,12 @@
  */
 import { apiCall } from '../api.js';
 import { renderCardSkeleton, escapeHtml } from '../ui.js';
-import { card, sectionTitle } from '../form-widgets.js';
+import { card, sectionTitle, answerRow } from '../form-widgets.js';
 import { formatThaiDateTime } from '../date-picker.js';
 import { ASSESSMENT_DEFS } from './assessment-form.js';
+import { renderInhomesssDetail } from './inhomesss-form.js';
 import {
-  BARTHEL_ITEMS, INHOMESSS_DOMAIN_ORDER, INHOMESSS_DOMAIN_LABELS,
-  NINE_Q_TEXTS, EIGHT_Q_TEXTS, FALL_RISK_TEXTS, CAREGIVER_BURDEN_TEXTS
+  BARTHEL_ITEMS, NINE_Q_TEXTS, EIGHT_Q_TEXTS, FALL_RISK_TEXTS, CAREGIVER_BURDEN_TEXTS, countInhomesssRiskFlags
 } from '../constants.js';
 
 /** ชุดคำถามของแบบ yes/no แต่ละชนิด — ใช้แปลง key q1..qN กลับเป็นข้อความคำถามตอนแสดงผล */
@@ -74,20 +74,11 @@ export async function renderAssessmentDetail(content, params) {
 
 /** แถบสรุปผลรวมด้านบนสุดของแต่ละชนิด */
 function resultBanner(text, tone = 'sky') {
-  const toneClass = { sky: 'bg-sky-50 text-sky-700', rose: 'bg-rose-50 text-rose-700', emerald: 'bg-emerald-50 text-emerald-700' }[tone];
+  const toneClass = {
+    sky: 'bg-sky-50 text-sky-700', rose: 'bg-rose-50 text-rose-700',
+    emerald: 'bg-emerald-50 text-emerald-700', amber: 'bg-amber-50 text-amber-800'
+  }[tone];
   return `<div class="${toneClass} text-sm font-medium rounded-xl px-3 py-2.5 mb-3">${escapeHtml(text)}</div>`;
-}
-
-/** แถวคำถาม-คำตอบแบบอ่านอย่างเดียว */
-function answerRow(question, answer, highlight = false) {
-  return `
-    <div class="flex items-start justify-between gap-3 py-2 border-b border-slate-100 last:border-0">
-      <p class="text-xs text-slate-600 min-w-0">${escapeHtml(question)}</p>
-      <span class="shrink-0 text-xs font-medium px-2 py-0.5 rounded-full ${highlight ? 'bg-rose-100 text-rose-700' : 'bg-slate-100 text-slate-600'}">
-        ${escapeHtml(answer)}
-      </span>
-    </div>
-  `;
 }
 
 /** @param {string} verdict @return {string} โทนสีตามระดับความเสี่ยงที่ backend แปลผลมา */
@@ -132,20 +123,15 @@ const DETAIL_RENDERERS = {
   },
 
   inhomesss(a) {
+    const answers = a.answers || {};
+    // แบบ INHOMESSS ไม่มีคะแนน/verdict ตามมาตรฐาน (ฟอร์มกระดาษไม่มีระบบให้คะแนน) — a.verdict ที่ backend
+    // ส่งมาเป็นข้อความสรุปธงความเสี่ยงที่ระบบไล่ตรวจเองเท่านั้น คำนวณซ้ำฝั่ง client เผื่อ record เก่าก่อนมีฟิลด์นี้
+    const riskCount = countInhomesssRiskFlags(answers);
+    const verdictText = a.verdict || (riskCount === 0 ? 'ไม่พบข้อบ่งชี้ความเสี่ยงเพิ่มเติม' : `พบข้อบ่งชี้ความเสี่ยง ${riskCount} รายการ`);
     return `
-      ${resultBanner(`พบปัญหา ${a.totalScore} มิติ · ${a.verdict || '-'}`, verdictTone(a.verdict))}
-      ${card(`
-        ${sectionTitle('รายมิติ')}
-        ${INHOMESSS_DOMAIN_ORDER.map((domain) => {
-          const entry = (a.answers && a.answers[domain]) || {};
-          return `
-            <div class="py-2 border-b border-slate-100 last:border-0">
-              ${answerRow(INHOMESSS_DOMAIN_LABELS[domain], entry.hasIssue === true ? 'พบปัญหา' : 'ไม่พบปัญหา', entry.hasIssue === true)}
-              ${entry.note ? `<p class="text-xs text-slate-500 mt-1 pl-1">↳ ${escapeHtml(entry.note)}</p>` : ''}
-            </div>
-          `;
-        }).join('')}
-      `)}
+      ${resultBanner(verdictText, riskCount === 0 ? 'emerald' : 'amber')}
+      <p class="text-xs text-slate-400 mb-3 px-1">สรุปจากคำตอบที่กรอกไว้ ไม่ใช่คะแนนมาตรฐานทางคลินิก</p>
+      ${renderInhomesssDetail(answers)}
     `;
   },
 

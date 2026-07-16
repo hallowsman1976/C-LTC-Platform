@@ -18,11 +18,12 @@ import { enqueueSync } from '../offline/db.js';
 import { renderCardSkeleton, showToast, escapeHtml } from '../ui.js';
 import {
   card, sectionTitle, segmentedChoice, yesNoToggle,
-  wireSegmented, wireYesNo, cssId
+  wireSegmented, wireYesNo
 } from '../form-widgets.js';
+import { renderInhomesssSection, wireInhomesssSection } from './inhomesss-form.js';
 import {
-  BARTHEL_ITEMS, INHOMESSS_DOMAIN_ORDER, INHOMESSS_DOMAIN_LABELS,
-  NINE_Q_TEXTS, EIGHT_Q_TEXTS, FALL_RISK_TEXTS, CAREGIVER_BURDEN_TEXTS, WOUND_STAGE_OPTIONS
+  BARTHEL_ITEMS, NINE_Q_TEXTS, EIGHT_Q_TEXTS, FALL_RISK_TEXTS, CAREGIVER_BURDEN_TEXTS,
+  WOUND_STAGE_OPTIONS, countInhomesssRiskFlags
 } from '../constants.js';
 
 /**
@@ -235,50 +236,28 @@ const barthelRenderer = {
   }
 };
 
-/** INHOMESSS — 9 มิติ แต่ละมิติมี hasIssue (บังคับ) + note (ไม่บังคับ) ตาม computeInhomesssScore_ */
+/**
+ * INHOMESSS — ฟอร์มเต็มตามแบบฟอร์มมาตรฐาน (แยกไปอยู่ inhomesss-form.js เพราะใช้ร่วมกับ visit-form-steps.js
+ * ขั้นตอนที่ 4 ด้วย) ไม่มีข้อบังคับต้องตอบครบ — เป็นเอกสารบันทึกอิสระ ไม่ใช่เครื่องมือให้คะแนนแบบ Barthel/9Q
+ * แถบสรุปด้านบนเป็น "ธงความเสี่ยง" ที่ระบบไล่ตรวจเอง ไม่ใช่คะแนนมาตรฐานทางคลินิก (ดู countInhomesssRiskFlags)
+ */
 const inhomesssRenderer = {
   render(container, state, def, rerender) {
-    const issues = INHOMESSS_DOMAIN_ORDER.filter((d) => (state.answers[d] || {}).hasIssue === true).length;
-    const answered = INHOMESSS_DOMAIN_ORDER.filter((d) => typeof (state.answers[d] || {}).hasIssue === 'boolean').length;
-    const verdict = issues <= 1 ? 'ปกติ' : (issues <= 3 ? 'ควรติดตาม' : 'ต้องดูแลเร่งด่วน');
+    const riskCount = countInhomesssRiskFlags(state.answers);
+    const bannerText = riskCount === 0 ? 'ยังไม่พบข้อบ่งชี้ความเสี่ยงจากคำตอบที่กรอกไว้' : `พบข้อบ่งชี้ความเสี่ยง ${riskCount} รายการ`;
     container.innerHTML = `
-      ${livePreview(`ตอบแล้ว ${answered}/${INHOMESSS_DOMAIN_ORDER.length} มิติ · พบปัญหา ${issues} มิติ · ${verdict}`)}
-      ${card(`
-        ${sectionTitle('INHOMESSS — 9 มิติ')}
-        <div class="space-y-4">
-          ${INHOMESSS_DOMAIN_ORDER.map((domain) => {
-            const entry = state.answers[domain] || {};
-            return `
-              <div>
-                <p class="text-xs text-slate-600 mb-1.5">${escapeHtml(INHOMESSS_DOMAIN_LABELS[domain])}</p>
-                ${yesNoToggle({ name: domain, value: entry.hasIssue, yesLabel: 'พบปัญหา', noLabel: 'ไม่พบปัญหา' })}
-                ${entry.hasIssue === true ? `
-                  <input type="text" data-inhomesss-note="${escapeHtml(domain)}" value="${escapeHtml(entry.note || '')}"
-                    placeholder="ระบุรายละเอียดปัญหา (ถ้ามี)"
-                    class="w-full mt-2 px-3 py-2 rounded-xl border border-slate-200 text-xs focus:outline-none focus:ring-2 focus:ring-sky-500" />
-                ` : ''}
-              </div>
-            `;
-          }).join('')}
-        </div>
-      `)}
+      ${livePreview(bannerText)}
+      ${renderInhomesssSection(state.answers)}
     `;
-    INHOMESSS_DOMAIN_ORDER.forEach((domain) => {
-      wireYesNo(container, domain, (value) => {
-        state.answers[domain] = { ...(state.answers[domain] || {}), hasIssue: value };
-        rerender();
-      });
-      const noteEl = container.querySelector(`[data-inhomesss-note="${cssId(domain)}"]`);
-      if (noteEl) {
-        noteEl.addEventListener('input', (e) => {
-          state.answers[domain] = { ...(state.answers[domain] || {}), note: e.target.value };
-        });
+    wireInhomesssSection(container, state.answers, {
+      onChange: (domain, patch, opts) => {
+        state.answers[domain] = { ...(state.answers[domain] || {}), ...patch };
+        if (opts.rerender) rerender();
       }
     });
   },
-  validate(state) {
-    const missing = INHOMESSS_DOMAIN_ORDER.find((d) => typeof (state.answers[d] || {}).hasIssue !== 'boolean');
-    return missing ? `กรุณาประเมินมิติ "${INHOMESSS_DOMAIN_LABELS[missing]}" ให้ครบทุกมิติ` : null;
+  validate() {
+    return null;
   },
   buildPayload(state) {
     return { answers: state.answers };

@@ -107,6 +107,49 @@ export const INHOMESSS_DOMAIN_LABELS = {
   service: 'Service — แหล่งบริการสุขภาพใกล้บ้าน'
 };
 
+/**
+ * ตัวเลือกของแต่ละมิติ INHOMESSS ในฟอร์มแบบเต็ม (แบบบันทึกติดตามดูแลผู้ป่วยต่อเนื่องที่บ้าน รพ.สต.)
+ * ใช้ข้อความไทยเป็นค่าที่เก็บจริงตรง ๆ (ไม่ใช้ enum key ภาษาอังกฤษ) ตามแบบแผนเดียวกับ SYMPTOM_OPTIONS/SERVICE_OPTIONS
+ * ด้านล่าง — backend เก็บ/คืนค่าตามที่ส่งมาโดยไม่ enum-validate เข้มงวดเหมือน Barthel เพราะ INHOMESSS เป็น
+ * เอกสารบันทึกอิสระ ไม่ใช่เครื่องมือให้คะแนน ต้องตรงกับ INHOMESSS_DOMAIN_FIELDS_ ใน Assessments.gs เป๊ะทุกค่า
+ */
+export const INHOMESSS_ADL_STATUS_OPTIONS = ['ทำได้เอง', 'ทำเองไม่ได้', 'ผู้ป่วยติดเตียง', 'ผู้ป่วยติดบ้าน'];
+export const INHOMESSS_NUTRITION_STATUS_OPTIONS = ['ปกติ', 'อ้วน', 'ผอม'];
+export const INHOMESSS_TASTE_OPTIONS = ['หวาน', 'มัน', 'เค็ม', 'เผ็ด', 'เปรี้ยว', 'จืด'];
+export const INHOMESSS_FOOD_SOURCE_OPTIONS = ['ปรุงเอง', 'ซื้อสำเร็จรูป', 'อาหารแช่แข็ง', 'อื่น ๆ'];
+export const INHOMESSS_HOME_INSIDE_OPTIONS = ['แออัด', 'โปร่งสบาย', 'สะอาด'];
+export const INHOMESSS_HOME_SURROUNDING_OPTIONS = ['มีบริเวณ', 'ไม่มีบริเวณ', 'อื่น ๆ'];
+export const INHOMESSS_EMERGENCY_CONTACT_OPTIONS = ['บุตร', 'ญาติ', 'อื่น ๆ'];
+export const INHOMESSS_MED_ADMIN_OPTIONS = ['ด้วยตนเอง', 'ผู้อื่น'];
+export const INHOMESSS_MED_REGULARITY_OPTIONS = ['สม่ำเสมอ', 'ไม่สม่ำเสมอ'];
+export const INHOMESSS_FALL_RISK_OPTIONS = ['ปลอดภัยต่อการพลัดตกหกล้ม', 'เสี่ยงต่อการพลัดตกหกล้ม'];
+export const INHOMESSS_SERVICE_SOURCE_OPTIONS = ['โรงพยาบาล', 'รพ.สต./ศสม', 'คลินิก', 'อื่น ๆ'];
+
+/**
+ * ธงความเสี่ยงที่ระบบไล่ตรวจจากคำตอบ INHOMESSS เอง — ไม่ใช่คะแนน/verdict ตามมาตรฐานทางคลินิก เพราะฟอร์ม
+ * กระดาษต้นฉบับไม่มีระบบให้คะแนน INHOMESSS เลย (ต่างจาก Barthel/9Q/FallRisk ที่มีเกณฑ์คะแนนชัดเจน)
+ * เป็นเพียงตัวช่วยดูภาพรวมเร็ว ๆ จาก 6 ประเด็นที่มีอยู่จริงในฟอร์ม ต้องตรงกับ INHOMESSS_RISK_FLAGS_ ใน
+ * Assessments.gs เป๊ะ (backend เป็นผู้คำนวณค่าจริงที่เก็บ ฝั่งนี้ใช้แค่แสดงผลสดระหว่างกรอกเท่านั้น)
+ */
+export const INHOMESSS_RISK_FLAGS = [
+  { domain: 'immobility', key: 'balanceOrGaitProblem', label: 'มีปัญหาการทรงตัว/การเดิน' },
+  { domain: 'immobility', key: 'sensoryProblem', label: 'มีปัญหาระบบประสาทสัมผัส' },
+  { domain: 'nutrition', key: 'alcohol', label: 'ดื่มแอลกอฮอล์' },
+  { domain: 'nutrition', key: 'tobacco', label: 'สูบบุหรี่/ยาเส้น' },
+  { domain: 'otherPeople', key: 'caregiverHealthRisk', label: 'ผู้ดูแลมีภาวะเสี่ยงด้านสุขภาพ' },
+  { domain: 'safety', key: 'fallRisk', matchValue: 'เสี่ยงต่อการพลัดตกหกล้ม', label: 'เสี่ยงต่อการพลัดตกหกล้ม' }
+];
+
+/** @param {Object} answers { domain: {...} } @return {number} จำนวนธงความเสี่ยงที่ตรงเงื่อนไข */
+export function countInhomesssRiskFlags(answers) {
+  answers = answers || {};
+  return INHOMESSS_RISK_FLAGS.filter((flag) => {
+    const entry = answers[flag.domain] || {};
+    const value = entry[flag.key];
+    return flag.matchValue ? value === flag.matchValue : value === true;
+  }).length;
+}
+
 /** ข้อความแบบประเมิน 9Q/8Q/ความเสี่ยงหกล้ม/ภาระผู้ดูแล — ต้องมีจำนวนข้อตรงกับ backend เป๊ะ (9/8/5/5 ข้อตามลำดับ) */
 export const NINE_Q_TEXTS = [
   'เบื่อ ไม่สนใจอยากทำอะไร', 'ไม่สบายใจ ซึมเศร้า ท้อแท้', 'หลับยากหรือหลับๆ ตื่นๆ หรือหลับมากไป',

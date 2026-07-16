@@ -36,6 +36,90 @@ var CAREGIVER_BURDEN_ITEM_COUNT_ = 5;
 // ของเดิมยุบเหลือ 8 แล้วแทนสามตัวท้ายด้วย 'socialSupport' ตัวเดียวซึ่งไม่มีในฟอร์ม
 var INHOMESSS_DOMAINS_ = ['immobility', 'nutrition', 'homeEnvironment', 'otherPeople', 'medications', 'examination', 'safety', 'spiritualHealth', 'service'];
 
+/**
+ * นิยามฟิลด์รายมิติของ INHOMESSS ฉบับเต็ม ถอดจากแบบฟอร์มกระดาษตรง ๆ (แบบบันทึกติดตามดูแลผู้ป่วยต่อเนื่องที่บ้าน
+ * รพ.สต.) — ต้องตรงกับ DOMAIN_FIELDS ใน frontend/screens/inhomesss-form.js เป๊ะทุก key/kind/options
+ *
+ * kind: 'boolean' | 'text' | 'enum' (เลือกได้ตัวเดียวจาก options) | 'enumArray' (เลือกได้หลายตัวจาก options)
+ * ตัวเลือกของ enum/enumArray เป็นข้อความไทยตรง ๆ (ไม่ใช่ enum key ภาษาอังกฤษ) ตามแบบแผนเดียวกับฟิลด์ multi-select
+ * อื่นในระบบ (Symptoms/ServicesGiven ของ Visits.gs) ซึ่งไม่ enum-validate เข้มงวดเช่นกัน — INHOMESSS เป็นเอกสาร
+ * บันทึกอิสระ ไม่ใช่เครื่องมือให้คะแนนที่ต้องตอบครบแบบ Barthel/9Q จึงไม่มีฟิลด์ไหนบังคับ
+ */
+var INHOMESSS_DOMAIN_FIELDS_ = {
+  immobility: [
+    { key: 'adlStatus', kind: 'enum', options: ['ทำได้เอง', 'ทำเองไม่ได้', 'ผู้ป่วยติดเตียง', 'ผู้ป่วยติดบ้าน'] },
+    { key: 'balanceOrGaitProblem', kind: 'boolean' },
+    { key: 'sensoryProblem', kind: 'boolean' }
+  ],
+  nutrition: [
+    { key: 'status', kind: 'enum', options: ['ปกติ', 'อ้วน', 'ผอม'] },
+    { key: 'favoriteFood', kind: 'text' },
+    { key: 'mealsPerDay', kind: 'text' },
+    { key: 'foodCaregiver', kind: 'text' },
+    { key: 'tastePreferences', kind: 'enumArray', options: ['หวาน', 'มัน', 'เค็ม', 'เผ็ด', 'เปรี้ยว', 'จืด'] },
+    { key: 'foodSource', kind: 'enumArray', options: ['ปรุงเอง', 'ซื้อสำเร็จรูป', 'อาหารแช่แข็ง', 'อื่น ๆ'] },
+    { key: 'foodSourceOtherDetail', kind: 'text' },
+    { key: 'alcohol', kind: 'boolean' },
+    { key: 'alcoholAmount', kind: 'text' },
+    { key: 'tobacco', kind: 'boolean' },
+    { key: 'tobaccoAmount', kind: 'text' }
+  ],
+  homeEnvironment: [
+    { key: 'inHouse', kind: 'enumArray', options: ['แออัด', 'โปร่งสบาย', 'สะอาด'] },
+    { key: 'surrounding', kind: 'enumArray', options: ['มีบริเวณ', 'ไม่มีบริเวณ', 'อื่น ๆ'] },
+    { key: 'surroundingOtherDetail', kind: 'text' }
+  ],
+  otherPeople: [
+    { key: 'emergencyContact', kind: 'enum', options: ['บุตร', 'ญาติ', 'อื่น ๆ'] },
+    { key: 'emergencyContactOtherDetail', kind: 'text' },
+    { key: 'endOfLifeDecisionMakerName', kind: 'text' },
+    { key: 'endOfLifeDecisionMakerPhone', kind: 'text' },
+    { key: 'caregiverHealthRisk', kind: 'boolean' }
+  ],
+  medications: [
+    { key: 'administeredBy', kind: 'enum', options: ['ด้วยตนเอง', 'ผู้อื่น'] },
+    { key: 'supplement', kind: 'text' },
+    { key: 'regularity', kind: 'enum', options: ['สม่ำเสมอ', 'ไม่สม่ำเสมอ'] },
+    { key: 'herbalMedicine', kind: 'text' },
+    { key: 'currentMedications', kind: 'text' }
+  ],
+  examination: [
+    { key: 'temperature', kind: 'text' },
+    { key: 'bp', kind: 'text' },
+    { key: 'pr', kind: 'text' },
+    { key: 'rr', kind: 'text' },
+    { key: 'labResult', kind: 'text' },
+    { key: 'physicalExam', kind: 'text' }
+  ],
+  safety: [
+    { key: 'fallRisk', kind: 'enum', options: ['ปลอดภัยต่อการพลัดตกหกล้ม', 'เสี่ยงต่อการพลัดตกหกล้ม'] }
+  ],
+  spiritualHealth: [
+    { key: 'beliefs', kind: 'text' }
+  ],
+  service: [
+    { key: 'sources', kind: 'enumArray', options: ['โรงพยาบาล', 'รพ.สต./ศสม', 'คลินิก', 'อื่น ๆ'] },
+    { key: 'hospitalDetail', kind: 'text' },
+    { key: 'healthCenterDetail', kind: 'text' },
+    { key: 'clinicDetail', kind: 'text' },
+    { key: 'otherDetail', kind: 'text' }
+  ]
+};
+
+/**
+ * ธงความเสี่ยงที่ระบบไล่ตรวจจากคำตอบ INHOMESSS เอง — ไม่ใช่คะแนน/verdict ตามมาตรฐานทางคลินิก เพราะฟอร์ม
+ * กระดาษต้นฉบับไม่มีระบบให้คะแนน INHOMESSS เลย (ต่างจาก Barthel/9Q/FallRisk) เป็นเพียงตัวช่วยดูภาพรวมเร็ว ๆ
+ * ต้องตรงกับ INHOMESSS_RISK_FLAGS ใน frontend/constants.js เป๊ะ
+ */
+var INHOMESSS_RISK_FLAGS_ = [
+  { domain: 'immobility', key: 'balanceOrGaitProblem' },
+  { domain: 'immobility', key: 'sensoryProblem' },
+  { domain: 'nutrition', key: 'alcohol' },
+  { domain: 'nutrition', key: 'tobacco' },
+  { domain: 'otherPeople', key: 'caregiverHealthRisk' },
+  { domain: 'safety', key: 'fallRisk', matchValue: 'เสี่ยงต่อการพลัดตกหกล้ม' }
+];
+
 var ASSESSMENT_LIST_MAX_PAGE_SIZE_ = 100;
 
 /**
@@ -379,21 +463,64 @@ function savePressureUlcerAssessment(payload, callerUser) {
  * ============================================================ */
 
 /**
- * @param {Object} answers { immobility: {hasIssue, note}=, nutrition: {...}=, ... } (9 domain ตาม INHOMESSS_DOMAINS_)
- * @return {{answers: Object, total: number, verdict: string}}
+ * sanitize ค่า 1 field ตาม kind ที่กำหนดใน INHOMESSS_DOMAIN_FIELDS_ — ค่าที่ไม่ผ่าน (นอก enum, ชนิดผิด)
+ * ถูกทิ้งกลับเป็นค่าว่างเงียบ ๆ ไม่ error เพราะ INHOMESSS เป็นเอกสารบันทึกอิสระ ไม่ใช่เครื่องมือให้คะแนน
+ * ที่ต้องตอบครบแบบ Barthel/9Q — clamp ผิดปกติแค่ไม่ให้ขยะเข้าไปในชีต ไม่ใช่ปฏิเสธทั้ง request
+ * @param {Object} field รายการจาก INHOMESSS_DOMAIN_FIELDS_[domain]
+ * @param {*} rawValue
+ * @return {*}
+ */
+function sanitizeInhomesssFieldValue_(field, rawValue) {
+  if (field.kind === 'boolean') return rawValue === true;
+  if (field.kind === 'text') return isNonEmptyString_(rawValue) ? String(rawValue) : '';
+  if (field.kind === 'enum') return isValidEnum_(rawValue, field.options) ? rawValue : '';
+  if (field.kind === 'enumArray') {
+    if (!Array.isArray(rawValue)) return [];
+    return rawValue.filter(function (v) { return isValidEnum_(v, field.options); });
+  }
+  return '';
+}
+
+/**
+ * คำนวณ "ธงความเสี่ยง" จากคำตอบที่ sanitize แล้ว — ไม่ใช่คะแนนมาตรฐานทางคลินิก (ฟอร์มกระดาษต้นฉบับไม่มี
+ * ระบบให้คะแนน INHOMESSS) เก็บ verdict เป็นข้อความอธิบายจำนวนธงที่พบ ไม่ใช่ระดับความรุนแรงแบบ Barthel/9Q
+ * @param {Object} cleanAnswers ผลลัพธ์ที่ sanitize แล้วจาก computeInhomesssScore_
+ * @return {number}
+ */
+function countInhomesssRiskFlags_(cleanAnswers) {
+  var count = 0;
+  INHOMESSS_RISK_FLAGS_.forEach(function (flag) {
+    var value = cleanAnswers[flag.domain][flag.key];
+    var matched = flag.matchValue ? (value === flag.matchValue) : (value === true);
+    if (matched) count++;
+  });
+  return count;
+}
+
+/**
+ * @param {Object} answers { immobility: {adlStatus, balanceOrGaitProblem, ...}=, nutrition: {...}=, ... }
+ *        (9 domain ตาม INHOMESSS_DOMAINS_ แต่ละมิติมีฟิลด์ต่างกันตาม INHOMESSS_DOMAIN_FIELDS_)
+ * @return {{answers: Object, total: number, verdict: string}} total/verdict คือธงความเสี่ยงที่ไล่ตรวจเอง
+ *        ไม่ใช่คะแนนมาตรฐาน (ดู countInhomesssRiskFlags_)
  */
 function computeInhomesssScore_(answers) {
   answers = answers || {};
   var clean = {};
-  var total = 0;
   INHOMESSS_DOMAINS_.forEach(function (domain) {
     var entry = answers[domain] || {};
-    var hasIssue = entry.hasIssue === true;
-    clean[domain] = { hasIssue: hasIssue, note: isNonEmptyString_(entry.note) ? entry.note : '' };
-    if (hasIssue) total++;
+    var cleanEntry = {};
+    INHOMESSS_DOMAIN_FIELDS_[domain].forEach(function (field) {
+      cleanEntry[field.key] = sanitizeInhomesssFieldValue_(field, entry[field.key]);
+    });
+    clean[domain] = cleanEntry;
   });
-  var verdict = total <= 1 ? 'ปกติ' : (total <= 3 ? 'ควรติดตาม' : 'ต้องดูแลเร่งด่วน');
-  return { answers: clean, total: total, verdict: verdict };
+
+  var riskFlagCount = countInhomesssRiskFlags_(clean);
+  var verdict = riskFlagCount === 0
+    ? 'ไม่พบข้อบ่งชี้ความเสี่ยงเพิ่มเติม'
+    : 'พบข้อบ่งชี้ความเสี่ยง ' + riskFlagCount + ' รายการ';
+
+  return { answers: clean, total: riskFlagCount, verdict: verdict };
 }
 
 /**

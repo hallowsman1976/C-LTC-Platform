@@ -12,7 +12,7 @@ import { createSignaturePad } from '../signature-pad.js';
 import { saveDraftLocal, getDraftLocal, findActiveDraftByPatient, deleteDraftLocal, enqueueSync } from '../offline/db.js';
 import { submitVisitBundle } from '../offline/visit-submit.js';
 import { renderVisitFormStep, validateVisitFormStep, STEP_TITLES, TOTAL_STEPS } from './visit-form-steps.js';
-import { BARTHEL_ITEMS, INHOMESSS_DOMAIN_ORDER } from '../constants.js';
+import { BARTHEL_ITEMS } from '../constants.js';
 
 const AUTOSAVE_DEBOUNCE_MS = 1500;
 
@@ -61,8 +61,9 @@ function createFreshState(patientId) {
   const clientTempId = 'tmp-' + (crypto.randomUUID ? crypto.randomUUID() : (Date.now() + '-' + Math.random().toString(36).slice(2)));
   const barthel = {};
   BARTHEL_ITEMS.forEach((item) => { barthel[item.key] = null; });
+  // ไม่ต้อง pre-populate ต่อมิติเหมือน barthel/fallRisk — INHOMESSS แต่ละมิติมีฟิลด์ไม่เท่ากัน (ดู DOMAIN_FIELDS
+  // ใน inhomesss-form.js) ปล่อยว่างแล้วให้ตัว render/wire สร้างเข้าไปเองตอนผู้ใช้กรอกจริง (answers[domain] || {})
   const inhomesss = {};
-  INHOMESSS_DOMAIN_ORDER.forEach((domain) => { inhomesss[domain] = { hasIssue: null, note: '' }; });
   const fallRisk = { q1: null, q2: null, q3: null, q4: null, q5: null };
   const caregiverBurden = { q1: null, q2: null, q3: null, q4: null, q5: null };
   const nineQ = {};
@@ -414,7 +415,7 @@ function buildSubmitBundle(state) {
       signatureFileId: state.signatureFileId || ''
     },
     barthel: { requestId: state.requestIds.barthel, answers: state.barthel },
-    inhomesss: { requestId: state.requestIds.inhomesss, answers: buildInhomesssAnswers(state) },
+    inhomesss: { requestId: state.requestIds.inhomesss, answers: state.inhomesss },
     fallRisk: { requestId: state.requestIds.fallRisk, answers: state.fallRisk },
     pressureUlcer: {
       requestId: state.requestIds.pressureUlcer, hasWound: !!state.wound.hasWound,
@@ -444,15 +445,6 @@ function buildPhotoFileIdsMap(state) {
     }
   });
   return map;
-}
-
-/** @param {Object} state @return {Object} */
-function buildInhomesssAnswers(state) {
-  const answers = {};
-  INHOMESSS_DOMAIN_ORDER.forEach((domain) => {
-    answers[domain] = { hasIssue: !!state.inhomesss[domain].hasIssue, note: state.inhomesss[domain].note };
-  });
-  return answers;
 }
 
 /** @param {string} isoString @return {string} */

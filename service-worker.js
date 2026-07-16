@@ -6,8 +6,8 @@
 
 // ต้องบัมพ์เลขนี้ทุกครั้งที่แก้ไฟล์ใน app shell — activate จะลบ cache ชื่อเก่าทิ้งแล้วโหลดใหม่ทั้งชุด
 // ถ้าไม่บัมพ์ ผู้ใช้เดิมจะได้ไฟล์เก่าค้างตลอดไป เพราะ fetch handler เป็น cache-first (เจอใน cache แล้วไม่ยิง network เลย)
-// v7: แก้ Barthel max 4 ข้อ + INHOMESSS 9 มิติ ให้ตรงแบบฟอร์ม รพ.สต. → constants.js/assessment-form.js เปลี่ยน
-const CACHE_NAME = 'ltc-smart-care-v7';
+// v8: สร้าง INHOMESSS ฉบับเต็มตามแบบฟอร์มจริง (9 มิติ รายฟิลด์) แทนแบบ toggle เดิม → constants.js/form-widgets.js/assessment-form.js/assessment-detail.js/visit-form-steps.js/visit-form.js เปลี่ยน + ไฟล์ใหม่ inhomesss-form.js
+const CACHE_NAME = 'ltc-smart-care-v8';
 const APP_SHELL_FILES = [
   './',
   './index.html',

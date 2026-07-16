@@ -14,11 +14,11 @@ import {
   card, sectionTitle, segmentedChoice, yesNoToggle, chipMultiSelect,
   wireSegmented, wireYesNo, wireChips, toggleArrayValue, cssId
 } from '../form-widgets.js';
+import { renderInhomesssSection, wireInhomesssSection } from './inhomesss-form.js';
 import {
-  BARTHEL_ITEMS, INHOMESSS_DOMAIN_ORDER, INHOMESSS_DOMAIN_LABELS,
-  NINE_Q_TEXTS, EIGHT_Q_TEXTS, FALL_RISK_TEXTS, CAREGIVER_BURDEN_TEXTS,
+  BARTHEL_ITEMS, NINE_Q_TEXTS, EIGHT_Q_TEXTS, FALL_RISK_TEXTS, CAREGIVER_BURDEN_TEXTS,
   SYMPTOM_OPTIONS, SERVICE_OPTIONS, MEDICATION_OPTIONS, NUTRITION_OPTIONS, EXCRETION_OPTIONS, SLEEP_OPTIONS,
-  SHORT_RISK_OPTIONS, WOUND_STAGE_OPTIONS
+  SHORT_RISK_OPTIONS, WOUND_STAGE_OPTIONS, countInhomesssRiskFlags
 } from '../constants.js';
 
 export const STEP_TITLES = [
@@ -144,37 +144,16 @@ function renderStep3(container, state, ctx) {
  * ============================================================ */
 
 function renderStep4(container, state, ctx) {
-  container.innerHTML = card(`
-    ${sectionTitle('ประเมินสิ่งแวดล้อมและบริบทที่บ้าน (INHOMESSS)')}
-    <div class="space-y-4">
-      ${INHOMESSS_DOMAIN_ORDER.map((domain) => {
-        const entry = state.inhomesss[domain];
-        return `
-          <div class="pb-3 ${domain !== INHOMESSS_DOMAIN_ORDER[INHOMESSS_DOMAIN_ORDER.length - 1] ? 'border-b border-slate-100' : ''}">
-            <p class="text-xs font-medium text-slate-600 mb-1.5">${escapeHtml(INHOMESSS_DOMAIN_LABELS[domain])}</p>
-            ${yesNoToggle({ name: `inhomesss-${domain}`, value: entry.hasIssue, yesLabel: 'พบปัญหา', noLabel: 'ไม่พบปัญหา' })}
-            ${entry.hasIssue ? `
-              <textarea data-inhomesss-note="${escapeHtml(domain)}" rows="2" placeholder="บันทึกรายละเอียดปัญหาที่พบ"
-                class="w-full mt-2 px-3 py-2 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500">${escapeHtml(entry.note)}</textarea>
-            ` : ''}
-          </div>
-        `;
-      }).join('')}
-    </div>
-  `);
-
-  INHOMESSS_DOMAIN_ORDER.forEach((domain) => {
-    wireYesNo(container, `inhomesss-${domain}`, (value) => {
-      const entry = state.inhomesss[domain];
-      ctx.setDeepValue('inhomesss', domain, { hasIssue: value, note: entry.note });
-      ctx.rerenderStep();
-    });
-    const noteEl = container.querySelector(`[data-inhomesss-note="${cssId(domain)}"]`);
-    if (noteEl) {
-      noteEl.addEventListener('input', (e) => {
-        const entry = state.inhomesss[domain];
-        ctx.setDeepValue('inhomesss', domain, { hasIssue: entry.hasIssue, note: e.target.value });
-      });
+  const riskCount = countInhomesssRiskFlags(state.inhomesss);
+  const bannerText = riskCount === 0 ? 'ยังไม่พบข้อบ่งชี้ความเสี่ยงจากคำตอบที่กรอกไว้' : `พบข้อบ่งชี้ความเสี่ยง ${riskCount} รายการ`;
+  container.innerHTML = `
+    <div class="bg-sky-50 text-sky-700 text-xs rounded-xl px-3 py-2 mb-3">${escapeHtml(bannerText)} <span class="text-sky-400">(สรุปจากคำตอบที่กรอก ไม่ใช่คะแนนมาตรฐาน)</span></div>
+    ${renderInhomesssSection(state.inhomesss)}
+  `;
+  wireInhomesssSection(container, state.inhomesss, {
+    onChange: (domain, patch, opts) => {
+      ctx.setDeepValue('inhomesss', domain, { ...(state.inhomesss[domain] || {}), ...patch });
+      if (opts.rerender) ctx.rerenderStep();
     }
   });
 }
@@ -567,10 +546,8 @@ export function validateVisitFormStep(stepNumber, state) {
     const missing = BARTHEL_ITEMS.find((item) => state.barthel[item.key] === null || state.barthel[item.key] === undefined);
     if (missing) return `กรุณาประเมินหัวข้อ "${missing.label}" ให้ครบก่อนไปขั้นตอนถัดไป`;
   }
-  if (stepNumber === 4) {
-    const missing = INHOMESSS_DOMAIN_ORDER.find((domain) => state.inhomesss[domain].hasIssue === null);
-    if (missing) return `กรุณาตอบหัวข้อ "${INHOMESSS_DOMAIN_LABELS[missing]}" ให้ครบก่อนไปขั้นตอนถัดไป`;
-  }
+  // step 4 (INHOMESSS) ไม่มีข้อบังคับต้องตอบครบ — เป็นเอกสารบันทึกอิสระตามแบบฟอร์มจริง ไม่ใช่เครื่องมือ
+  // ให้คะแนนที่ต้องตอบครบทุกข้อแบบ Barthel/9Q (ดู inhomesss-form.js)
   if (stepNumber === 6) {
     if (state.wound.hasWound === null) return 'กรุณาระบุว่าพบแผลกดทับหรือไม่';
     if (state.wound.hasWound && !state.wound.stage) return 'กรุณาระบุระยะ (Stage) ของแผลกดทับ';
