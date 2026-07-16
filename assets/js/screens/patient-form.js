@@ -15,7 +15,7 @@ import { getCurrentUser, hasRole } from '../auth.js';
 import { renderCardSkeleton, showToast, escapeHtml } from '../ui.js';
 import { getUsersByRole } from '../directory.js';
 import { isNonEmptyString, isValidThaiCid, isValidIsoDate, formatCidInput } from '../validation.js';
-import { initThaiBirthDatePicker, initThaiAppointmentDatePicker } from '../date-picker.js';
+import { initThaiBirthDatePicker, initThaiAppointmentDatePicker, computeAgeFromIsoDate } from '../date-picker.js';
 import { GENDER_OPTIONS, PATIENT_STATUS_OPTIONS } from '../constants.js';
 
 /**
@@ -48,6 +48,21 @@ export async function renderPatientForm(content, params) {
 
   initThaiBirthDatePicker(form.querySelector('#pf-birthdate'));
   initThaiAppointmentDatePicker(form.querySelector('#pf-nextvisit'));
+
+  // อายุคำนวณสดจากวันเกิดด้วยสูตรเดียวกับ computeAge_ ฝั่ง backend — เป็นตัวช่วยยืนยันสายตาว่าเลือกปีถูก
+  // (พลาดปี พ.ศ./ค.ศ. สลับกันจะเห็นทันทีว่าอายุเพี้ยนเป็นหลักร้อย) ไม่ได้ส่งขึ้น backend เพราะ backend
+  // คำนวณเองจาก BirthDate อยู่แล้วและไม่มีคอลัมน์ Age ให้เก็บ
+  const birthInput = form.querySelector('#pf-birthdate');
+  const ageEl = form.querySelector('#pf-age');
+  function paintAge() {
+    const age = computeAgeFromIsoDate(birthInput.value);
+    ageEl.textContent = age === null ? '' : `อายุ ${age} ปี`;
+    ageEl.classList.toggle('text-rose-600', age !== null && (age < 0 || age > 120));
+    ageEl.classList.toggle('text-slate-400', !(age !== null && (age < 0 || age > 120)));
+  }
+  // flatpickr ยิง event 'change' บน input ตัวจริงทุกครั้งที่ค่าเปลี่ยน ไม่ว่าจะเลือกจากปฏิทินหรือพิมพ์เอง
+  birthInput.addEventListener('change', paintAge);
+  paintAge();
 
   form.addEventListener('submit', async (event) => {
     event.preventDefault();
@@ -157,8 +172,9 @@ function buildFormHtml(ctx) {
         </div>
         <div>
           <label class="block text-xs font-medium text-slate-500 mb-1">วันเกิด *</label>
-          <input id="pf-birthdate" name="birthDate" type="text" value="${escapeHtml(v.birthDate || '')}" placeholder="เลือกวันเกิด (พ.ศ.)"
+          <input id="pf-birthdate" name="birthDate" type="text" value="${escapeHtml(v.birthDate || '')}" placeholder="เลือกหรือพิมพ์ เช่น 16/7/2490"
             class="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500" />
+          <p id="pf-age" class="text-xs text-slate-400 mt-1"></p>
         </div>
         <div>${cidField}</div>
       </div>
@@ -279,6 +295,13 @@ function validateForm(values, isEdit) {
   if (!isNonEmptyString(values.hn)) return 'กรุณากรอก HN';
   if (!isNonEmptyString(values.gender)) return 'กรุณาเลือกเพศ';
   if (!isValidIsoDate(values.birthDate)) return 'กรุณาเลือกวันเกิดให้ถูกต้อง';
+  // ปฏิทินจำกัดให้เลือกได้แค่ 120 ปีย้อนหลังและห้ามอนาคตอยู่แล้ว แต่ตอนนี้ผู้ใช้พิมพ์วันที่เองได้
+  // ซึ่งข้ามข้อจำกัดนั้นไปได้ (พิมพ์ 1/1/2400 = อายุ 169 ปี ก็ผ่าน) — backend ก็ไม่ได้ตรวจ (isValidIsoDate_
+  // เช็คแค่ว่า parse ได้) ถ้าไม่ดักตรงนี้ วันเกิดที่พิมพ์พลาดจะถูกบันทึกจริงและอายุในระบบเพี้ยนตามไปหมด
+  const age = computeAgeFromIsoDate(values.birthDate);
+  if (age === null || age < 0 || age > 120) {
+    return `วันเกิดไม่สมเหตุสมผล (คำนวณอายุได้ ${age === null ? '-' : age} ปี) กรุณาตรวจสอบอีกครั้ง`;
+  }
   if (!isNonEmptyString(values.village)) return 'กรุณากรอกหมู่บ้าน';
   if (!isNonEmptyString(values.tambon)) return 'กรุณากรอกตำบล';
   if (!isNonEmptyString(values.amphoe)) return 'กรุณากรอกอำเภอ';

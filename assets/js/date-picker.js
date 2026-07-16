@@ -9,14 +9,30 @@
  *  2) ช่องปีบนหัวปฏิทินของ flatpickr เป็น number input ที่ผูก event ตีความค่าเป็น ค.ศ. ตายตัว (พิมพ์ 2569
  *     แล้วมันกระโดดไป ค.ศ. 2569) เขียนทับค่าเฉย ๆ ไม่พอ จึงซ่อนทิ้งแล้ววาง <select> ปี พ.ศ. แทน
  *     ผลพลอยได้คือเลือกปีเกิดย้อนหลังหลายสิบปีได้ในคลิกเดียว ไม่ต้องกดลูกศรทีละปี
+ *  3) ผู้ใช้พิมพ์วันที่เองได้ (allowInput) โดย parseTypedDate รับรูปแบบที่คนไทยพิมพ์จริงหลายแบบ และ
+ *     guardTypedInput กันไม่ให้ flatpickr ล้างค่าเดิมทิ้งเงียบ ๆ เมื่อพิมพ์ผิด
  */
+import { showToast } from './ui.js';
 
 const BE_OFFSET = 543;
 const ISO_FORMAT = 'Y-m-d';
 
+/**
+ * เกณฑ์แยกว่าปีที่ผู้ใช้พิมพ์เป็น พ.ศ. หรือ ค.ศ. — ปีตั้งแต่ 2400 ขึ้นไปถือเป็น พ.ศ. เสมอ
+ * ในทางปฏิบัติไม่มีทางกำกวม: ค.ศ. ที่เป็นไปได้ของวันเกิด/วันนัดคือ 1900-2100 ส่วน พ.ศ. คือ 2443-2643
+ * ช่วงสองอันนี้ไม่ทับกันเลย จึงเดาถูกเสมอ และยอมรับทั้งคนที่พิมพ์ 2569 และคนที่เผลอพิมพ์ 2026
+ */
+const BE_YEAR_THRESHOLD = 2400;
+
 const THAI_MONTHS = [
   'มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน',
   'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'
+];
+
+/** ชื่อย่อเดือนไทย เรียงตรงกับ THAI_MONTHS — รับตอนผู้ใช้พิมพ์เอง (เช่น "16 ก.ค. 2569") */
+const THAI_MONTHS_ABBR = [
+  'ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.',
+  'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'
 ];
 
 /** @param {Date} date @return {string} "YYYY-MM-DD" (ค.ศ.) */
@@ -38,6 +54,79 @@ function parseIsoString(value) {
   const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(value || '').trim());
   if (!match) return undefined;
   return new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]));
+}
+
+/**
+ * ประกอบ Date จากเลขวัน/เดือน/ปีที่ผู้ใช้พิมพ์ พร้อมตรวจว่ามีอยู่จริง
+ * ต้องเช็คย้อนกลับด้วยเพราะ new Date(2569, 1, 31) ไม่ error แต่ "ไหล" ไปเป็น 3 มี.ค. เงียบ ๆ
+ * ถ้าไม่ดัก ผู้ใช้พิมพ์ 31/02/2569 แล้วจะได้วันที่อื่นโดยไม่รู้ตัว
+ * @param {number} year ปี พ.ศ. หรือ ค.ศ. ก็ได้ (ดู BE_YEAR_THRESHOLD)
+ * @param {number} month 1-12
+ * @param {number} day 1-31
+ * @return {Date|undefined}
+ */
+function buildDateFromParts(year, month, day) {
+  const ceYear = year >= BE_YEAR_THRESHOLD ? year - BE_OFFSET : year;
+  const date = new Date(ceYear, month - 1, day);
+  const roundTrips = date.getFullYear() === ceYear && date.getMonth() === month - 1 && date.getDate() === day;
+  return roundTrips ? date : undefined;
+}
+
+/**
+ * หา index เดือนจากข้อความไทยที่ผู้ใช้พิมพ์ รับทั้งชื่อเต็มและชื่อย่อ (มีจุดหรือไม่มีก็ได้)
+ * @param {string} text
+ * @return {number} 0-11 หรือ -1 ถ้าไม่รู้จัก
+ */
+function resolveThaiMonth(text) {
+  const normalized = String(text).replace(/[\s.]/g, '');
+  const full = THAI_MONTHS.findIndex((m) => m === normalized);
+  if (full !== -1) return full;
+  return THAI_MONTHS_ABBR.findIndex((m) => m.replace(/\./g, '') === normalized);
+}
+
+/**
+ * แปลงข้อความวันที่ที่ "ผู้ใช้พิมพ์เอง" เป็น Date — รับหลายรูปแบบเท่าที่คนไทยพิมพ์กันจริง:
+ *   2026-07-16 (ISO ที่ input เก็บอยู่)  ·  16/7/2569  ·  16-07-2569  ·  16.7.2569
+ *   16 กรกฎาคม 2569  ·  16 ก.ค. 2569
+ * ปี 2 หลัก (16/7/69) จงใจไม่รับ เพราะเดาไม่ได้ว่าหมายถึง พ.ศ. 2569 หรือ ค.ศ. 1969 — วันเกิดผิด 543 ปี
+ * หรือ 100 ปีคือความเสียหายที่แก้ยากกว่าการบังคับให้พิมพ์ปีเต็ม
+ * @param {string} value
+ * @return {Date|undefined}
+ */
+function parseTypedDate(value) {
+  const raw = String(value || '').trim();
+  if (!raw) return undefined;
+
+  const iso = /^(\d{4})-(\d{1,2})-(\d{1,2})$/.exec(raw);
+  if (iso) return buildDateFromParts(Number(iso[1]), Number(iso[2]), Number(iso[3]));
+
+  const numeric = /^(\d{1,2})\s*[/\-.]\s*(\d{1,2})\s*[/\-.]\s*(\d{4})$/.exec(raw);
+  if (numeric) return buildDateFromParts(Number(numeric[3]), Number(numeric[2]), Number(numeric[1]));
+
+  const worded = /^(\d{1,2})\s+(.+?)\s+(\d{4})$/.exec(raw);
+  if (worded) {
+    const monthIndex = resolveThaiMonth(worded[2]);
+    if (monthIndex !== -1) return buildDateFromParts(Number(worded[3]), monthIndex + 1, Number(worded[1]));
+  }
+  return undefined;
+}
+
+/**
+ * คำนวณอายุจากวันเกิด — ต้องให้ผลตรงกับ computeAge_ ใน Patients.gs เป๊ะ (สูตรเดียวกัน: ปีต่างกัน
+ * แล้วลบ 1 ถ้ายังไม่ถึงวันเกิดปีนี้) ไม่งั้นตัวเลขที่โชว์ตอนกรอกจะไม่ตรงกับที่ backend คำนวณเก็บจริง
+ * @param {string} isoValue "YYYY-MM-DD"
+ * @return {number|null} null ถ้าวันเกิดไม่ถูกต้อง/ยังไม่ได้เลือก
+ */
+export function computeAgeFromIsoDate(isoValue) {
+  const birth = parseIsoString(isoValue);
+  if (!birth) return null;
+  const now = new Date();
+  let age = now.getFullYear() - birth.getFullYear();
+  const monthDiff = now.getMonth() - birth.getMonth();
+  if (monthDiff < 0 || (monthDiff === 0 && now.getDate() < birth.getDate())) {
+    age -= 1;
+  }
+  return age;
 }
 
 /**
@@ -100,6 +189,43 @@ function syncClearButton(fp) {
 }
 
 /**
+ * กันข้อมูลหายตอนพิมพ์เอง (ผลข้างเคียงของ allowInput: true)
+ *
+ * พฤติกรรมเดิมของ flatpickr: พอ blur แล้วมันเอาข้อความในช่องไป setDate ตรง ๆ — ถ้า parse ไม่ผ่านมันจะ
+ * "ล้างค่าทิ้งเงียบ ๆ" ทั้งที่ก่อนหน้านั้นมีวันที่ที่ถูกต้องอยู่ ผู้ใช้พิมพ์ผิดนิดเดียว (หรือพิมพ์ค้างแล้วเผลอคลิกที่อื่น)
+ * วันเกิดที่กรอกไว้ก็หายทันทีโดยไม่มีคำเตือน ซึ่งอันตรายกับเวชระเบียน
+ *
+ * จึงจำค่าที่ดีล่าสุดไว้ตอน focus แล้วถ้า blur ออกมาโดย parse ไม่ผ่าน ให้คืนค่าเดิม + บอกผู้ใช้ว่าพิมพ์ผิด
+ * (ถ้าผู้ใช้ตั้งใจลบข้อความจนว่าง = ยอมให้ล้างตามปกติ ไม่ใช่เคสพิมพ์ผิด)
+ * @param {Object} fp
+ */
+function guardTypedInput(fp) {
+  const altInput = fp.altInput;
+
+  altInput.addEventListener('focus', () => { fp.ltcIsoOnFocus = fp.input.value; });
+  altInput.addEventListener('input', () => { fp.ltcTypedText = altInput.value; });
+
+  // ทำงานหลัง blur handler ของ flatpickr เสมอ เพราะ flatpickr ผูกของมันตอน build (ก่อน onReady)
+  altInput.addEventListener('blur', () => {
+    const typed = String(fp.ltcTypedText || '').trim();
+    fp.ltcTypedText = '';
+
+    if (!typed) return;            // ไม่ได้พิมพ์ หรือผู้ใช้ลบทิ้งเอง (ตั้งใจล้างค่า)
+    if (fp.input.value) return;    // parse ผ่านแล้ว
+
+    if (fp.ltcIsoOnFocus) fp.setDate(fp.ltcIsoOnFocus, true);
+    // แยกสองสาเหตุให้ชัด: พิมพ์ผิดรูปแบบ กับ พิมพ์ถูกแต่เป็นวันที่นอกช่วงที่อนุญาต (เช่น วันเกิดในอนาคต
+    // ที่ maxDate กันไว้) — flatpickr ล้างค่าทิ้งเหมือนกันทั้งคู่ ถ้าบอกว่า "รูปแบบผิด" ทั้งที่พิมพ์ถูก ผู้ใช้จะงง
+    showToast(
+      parseTypedDate(typed)
+        ? 'วันที่นี้อยู่นอกช่วงที่เลือกได้ กรุณาตรวจสอบอีกครั้ง'
+        : 'รูปแบบวันที่ไม่ถูกต้อง — พิมพ์เช่น 16/7/2569 หรือ 16 ก.ค. 2569 (ปีเต็ม 4 หลัก)',
+      'error'
+    );
+  });
+}
+
+/**
  * หาช่วงปี ค.ศ. ของ dropdown โดยกันไม่ให้ค่าที่มีอยู่แล้วหลุดออกนอกช่วง
  * (เช่น ผู้ป่วยเก่าที่มีวันนัดย้อนหลังไปไกลกว่าช่วง default — ถ้าไม่มีปีนั้นใน select จะเลือกกลับไม่ได้)
  * @param {number|undefined} minYear
@@ -119,6 +245,29 @@ function resolveYearRange(minYear, maxYear, currentValue) {
 }
 
 /**
+ * instance ที่ยังมีชีวิตอยู่ทั้งหมด — ใช้เก็บกวาดตัวที่ input หลุดจาก DOM ไปแล้ว
+ *
+ * ทำไมต้องมี: flatpickr แขวนปฏิทินไว้ที่ document.body ไม่ใช่ข้าง input ส่วน router ของแอปเปลี่ยนหน้าด้วยการ
+ * เขียนทับ content.innerHTML ทั้งก้อน — input หายไปแต่ปฏิทินยังค้างอยู่ใน body พร้อม event listener ครบชุด
+ * เข้า-ออกหน้าฟอร์มผู้ป่วย 3 รอบ = ปฏิทินค้าง 6 อัน สะสมไปเรื่อย ๆ จนกว่าจะรีเฟรชทั้งแอป (PWA เปิดค้างทั้งวัน
+ * ยิ่งสะสม) และ querySelector('.flatpickr-calendar.open') ก็ไปเจอปฏิทินผีเข้าแทนตัวจริงได้ด้วย
+ */
+const livePickers = new Set();
+
+/** ทำลาย instance ที่ input ไม่อยู่ใน DOM แล้ว (หน้าถูกเปลี่ยนไป) — เรียกก่อนสร้างตัวใหม่ทุกครั้ง */
+function sweepDetachedPickers() {
+  livePickers.forEach((fp) => {
+    if (fp.input && fp.input.isConnected) return;
+    try {
+      fp.destroy();
+    } catch (err) {
+      // ถูก destroy ไปแล้วจากที่อื่น (เช่น visit-form step 8 ที่จัดการเองตอน rerender) — ข้ามไป
+    }
+    livePickers.delete(fp);
+  });
+}
+
+/**
  * ผูก flatpickr ปี พ.ศ. เข้ากับ input หนึ่งช่อง
  * input ที่ส่งเข้ามาต้องเป็น type="text" (ไม่ใช่ type="date" ซึ่งเบราว์เซอร์จะยึด UI ปฏิทิน ค.ศ. ของตัวเองไว้)
  * และค่าเริ่มต้น/ค่าที่อ่านออกไปยังเป็น "YYYY-MM-DD" ค.ศ. เหมือนเดิมทุกประการ
@@ -131,24 +280,29 @@ function resolveYearRange(minYear, maxYear, currentValue) {
 export function initThaiDatePicker(inputEl, options = {}) {
   if (!inputEl || typeof window.flatpickr !== 'function') return null;
 
+  sweepDetachedPickers();
+
   const { minYear, maxYear, clearable = false, ...flatpickrOptions } = options;
   const range = resolveYearRange(minYear, maxYear, parseIsoString(inputEl.value));
 
-  return window.flatpickr(inputEl, {
+  const instance = window.flatpickr(inputEl, {
     locale: 'th',
     dateFormat: ISO_FORMAT,
     altInput: true,
     altFormat: 'thai',
-    allowInput: false,
+    allowInput: true,
     disableMobile: true,
     monthSelectorType: 'dropdown',
-    altInputClass: `${inputEl.className} ltc-fp-alt bg-white cursor-pointer`,
+    altInputClass: `${inputEl.className} ltc-fp-alt bg-white`,
     formatDate: (date, format) => (format === ISO_FORMAT ? toIsoString(date) : toThaiString(date)),
-    parseDate: (value) => parseIsoString(value),
+    // flatpickr เรียก parseDate ทั้งตอนอ่านค่าเริ่มต้นจาก input (ISO) และตอนผู้ใช้พิมพ์เองแล้ว blur
+    // (ส่งข้อความในช่องที่เห็นมาให้) — ตัวเดียวกันจึงต้องรับได้ทั้งสองแบบ
+    parseDate: (value) => parseTypedDate(value),
     onReady: (_selectedDates, _dateStr, fp) => {
       fp.ltcYearSelect = buildYearSelect(fp, range.minYear, range.maxYear);
       fp.ltcYearSelect.value = String(fp.currentYear);
       if (clearable) fp.ltcClearButton = buildClearButton(fp);
+      guardTypedInput(fp);
       syncClearButton(fp);
     },
     onYearChange: (_selectedDates, _dateStr, fp) => {
@@ -157,6 +311,9 @@ export function initThaiDatePicker(inputEl, options = {}) {
     onChange: (_selectedDates, _dateStr, fp) => syncClearButton(fp),
     ...flatpickrOptions
   });
+
+  livePickers.add(instance);
+  return instance;
 }
 
 /**

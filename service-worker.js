@@ -6,8 +6,8 @@
 
 // ต้องบัมพ์เลขนี้ทุกครั้งที่แก้ไฟล์ใน app shell — activate จะลบ cache ชื่อเก่าทิ้งแล้วโหลดใหม่ทั้งชุด
 // ถ้าไม่บัมพ์ ผู้ใช้เดิมจะได้ไฟล์เก่าค้างตลอดไป เพราะ fetch handler เป็น cache-first (เจอใน cache แล้วไม่ยิง network เลย)
-// v5: เพิ่มหน้ามอบหมายทีมดูแลรวมศูนย์ (/admin/assignments) → router.js เปลี่ยน
-const CACHE_NAME = 'ltc-smart-care-v5';
+// v6: วันเกิดคำนวณอายุอัตโนมัติ + พิมพ์วันที่เองได้ + แก้ปฏิทินค้างใน body
+const CACHE_NAME = 'ltc-smart-care-v6';
 const APP_SHELL_FILES = [
   './',
   './index.html',
