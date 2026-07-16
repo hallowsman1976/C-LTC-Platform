@@ -1,0 +1,15 @@
+# frontend/ เป็น git repo แยกของตัวเอง (remote: github.com/hallowsman1976/C-LTC-Platform)
+# เพราะ GitHub Pages เสิร์ฟเนื้อหาข้างใน frontend/ จาก root ของ repo นั้นโดยตรง ดู DEPLOYMENT.md §5
+# repo นี้จึงดูแลเฉพาะ backend (Apps Script) + เอกสาร — ห้ามดึง frontend/ เข้ามาซ้อนกัน
+frontend/
+
+# clasp เก็บสถานะ deployment ล่าสุดไว้ในนี้ ไม่ใช่ซอร์สโค้ด
+.clasp.json.backup
+.clasprc.json
+
+node_modules/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+*.swp
