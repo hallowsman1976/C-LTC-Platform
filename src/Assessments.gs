@@ -11,23 +11,30 @@
  * - ทุก action ตรวจสิทธิ์ผ่าน resolveAssessmentContext_ (ต้องเข้าถึงผู้ป่วยได้ + ไม่ใช่ VIEWER) ก่อนเสมอ
  */
 
-/** นิยาม Barthel ADL Index — พอร์ต key/max ตรงจาก prototype เดิม (App.html BARTHEL_DEFS) */
+/**
+ * นิยาม Barthel ADL Index — max ต่อข้อยึดตามแบบฟอร์มมาตรฐาน (แบบบันทึกติดตามดูแลผู้ป่วยต่อเนื่องที่บ้าน รพ.สต.)
+ * prototype เดิมสลับ max ของ 4 ข้อไว้ผิด (grooming/toilet/mobility/stairs) แม้ผลรวมเต็มยังได้ 20 เท่ากัน
+ * แต่การให้คะแนนรายข้อไม่ตรงกับกระดาษ เช่น "ใช้ห้องน้ำเองได้" ระบบเดิมให้ 3 แต่ฟอร์มจริงเต็มแค่ 2
+ * ต้องตรงกับ BARTHEL_ITEMS ใน frontend/constants.js เป๊ะ (key + max)
+ */
 var BARTHEL_DEFS_ = [
   { key: 'feeding', max: 2 },
   { key: 'bathing', max: 1 },
-  { key: 'grooming', max: 2 },
+  { key: 'grooming', max: 1 },
   { key: 'dressing', max: 2 },
   { key: 'bowel', max: 2 },
   { key: 'bladder', max: 2 },
-  { key: 'toilet', max: 3 },
+  { key: 'toilet', max: 2 },
   { key: 'transfer', max: 3 },
-  { key: 'mobility', max: 2 },
-  { key: 'stairs', max: 1 }
+  { key: 'mobility', max: 3 },
+  { key: 'stairs', max: 2 }
 ];
 
 var FALL_RISK_ITEM_COUNT_ = 5;
 var CAREGIVER_BURDEN_ITEM_COUNT_ = 5;
-var INHOMESSS_DOMAINS_ = ['immobility', 'nutrition', 'homeEnvironment', 'otherPeople', 'medications', 'examination', 'safety', 'socialSupport'];
+// INHOMESSS มี 9 มิติตามตัวย่อจริง (S สามตัว = Safety/Spiritual/Service) ตามแบบฟอร์ม รพ.สต.
+// ของเดิมยุบเหลือ 8 แล้วแทนสามตัวท้ายด้วย 'socialSupport' ตัวเดียวซึ่งไม่มีในฟอร์ม
+var INHOMESSS_DOMAINS_ = ['immobility', 'nutrition', 'homeEnvironment', 'otherPeople', 'medications', 'examination', 'safety', 'spiritualHealth', 'service'];
 
 var ASSESSMENT_LIST_MAX_PAGE_SIZE_ = 100;
 
@@ -367,12 +374,12 @@ function savePressureUlcerAssessment(payload, callerUser) {
 }
 
 /* ============================================================
- * INHOMESSS — ประเมินสิ่งแวดล้อมและบริบทที่บ้าน 8 มิติ (Immobility, Nutrition, Home environment,
- * Other people, Medications, Examination, Safety, Social support) — action: assessments.saveInhomesss
+ * INHOMESSS — ประเมินสิ่งแวดล้อมและบริบทที่บ้าน 9 มิติ (Immobility, Nutrition, Home environment,
+ * Other people, Medications, Examination, Safety, Spiritual health, Service) — action: assessments.saveInhomesss
  * ============================================================ */
 
 /**
- * @param {Object} answers { immobility: {hasIssue, note}=, nutrition: {...}=, ... } (8 domain ตาม INHOMESSS_DOMAINS_)
+ * @param {Object} answers { immobility: {hasIssue, note}=, nutrition: {...}=, ... } (9 domain ตาม INHOMESSS_DOMAINS_)
  * @return {{answers: Object, total: number, verdict: string}}
  */
 function computeInhomesssScore_(answers) {
