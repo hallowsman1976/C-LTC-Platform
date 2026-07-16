@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "frontend-static",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["--yes", "http-server", "frontend", "-p", "9864", "-c-1"],
+      "port": 9864
+    }
+  ]
+}

@@ -1,0 +1,999 @@
+<script type="module">
+import { html, render, Component } from 'https://unpkg.com/htm/preact/standalone.module.js';
+
+/* ================= seed data / constants ================= */
+
+const THAI_MONTHS = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+function thaiToday() {
+  const d = new Date();
+  return `วันนี้ ${d.getDate()} ${THAI_MONTHS[d.getMonth()]} ${d.getFullYear() + 543}`;
+}
+
+const BARTHEL_DEFS = [
+  { key: 'feeding', label: 'การรับประทานอาหาร', opts: [{v:0,l:'ทำเองไม่ได้'},{v:1,l:'ต้องช่วยเหลือ'},{v:2,l:'ทำเองได้'}] },
+  { key: 'bathing', label: 'การอาบน้ำ', opts: [{v:0,l:'ต้องช่วยเหลือ'},{v:1,l:'ทำเองได้'}] },
+  { key: 'grooming', label: 'การแต่งตัว/แต่งกาย', opts: [{v:0,l:'ทำเองไม่ได้'},{v:1,l:'ต้องช่วยเหลือ'},{v:2,l:'ทำเองได้'}] },
+  { key: 'dressing', label: 'การใช้ห้องน้ำ', opts: [{v:0,l:'ทำเองไม่ได้'},{v:1,l:'ต้องช่วยเหลือ'},{v:2,l:'ทำเองได้'}] },
+  { key: 'bowel', label: 'การกลั้นการถ่ายอุจจาระ', opts: [{v:0,l:'กลั้นไม่ได้'},{v:1,l:'เป็นบางครั้ง'},{v:2,l:'กลั้นได้ปกติ'}] },
+  { key: 'bladder', label: 'การกลั้นปัสสาวะ', opts: [{v:0,l:'กลั้นไม่ได้'},{v:1,l:'เป็นบางครั้ง'},{v:2,l:'กลั้นได้ปกติ'}] },
+  { key: 'toilet', label: 'การเคลื่อนย้ายตัว', opts: [{v:0,l:'ทำเองไม่ได้'},{v:1,l:'ต้องช่วยเหลือมาก'},{v:2,l:'ช่วยเหลือเล็กน้อย'},{v:3,l:'ทำเองได้'}] },
+  { key: 'transfer', label: 'การเดินหรือเคลื่อนที่', opts: [{v:0,l:'เดินไม่ได้'},{v:1,l:'ใช้รถเข็น'},{v:2,l:'ต้องช่วยเหลือ'},{v:3,l:'เดินได้เอง'}] },
+  { key: 'mobility', label: 'การขึ้นลงบันได', opts: [{v:0,l:'ทำเองไม่ได้'},{v:1,l:'ต้องช่วยเหลือ'},{v:2,l:'ทำเองได้'}] },
+  { key: 'stairs', label: 'การสระผม/ล้างหน้า', opts: [{v:0,l:'ทำเองไม่ได้'},{v:1,l:'ทำเองได้'}] },
+];
+
+const NINE_Q_TEXTS = [
+  'เบื่อ ไม่สนใจอยากทำอะไร', 'ไม่สบายใจ ซึมเศร้า ท้อแท้', 'หลับยากหรือหลับๆตื่นๆ หรือหลับมากไป',
+  'เหนื่อยง่ายหรือไม่ค่อยมีแรง', 'เบื่ออาหาร หรือกินมากเกินไป', 'รู้สึกไม่ดีกับตัวเอง คิดว่าตัวเองล้มเหลว',
+  'สมาธิไม่ดีเวลาทำอะไร', 'พูดหรือทำช้าลง หรือกระสับกระส่ายมากกว่าปกติ', 'คิดทำร้ายตัวเอง หรือคิดว่าตายไปจะดีกว่า',
+];
+const EIGHT_Q_TEXTS = [
+  'รู้สึกอยากตายหรือคิดอยากตาย', 'อยากทำร้ายตนเองหรือทำให้ตนเองบาดเจ็บ', 'คิดเกี่ยวกับการฆ่าตัวตาย',
+  'มีแผนการที่จะฆ่าตัวตาย', 'สามารถควบคุมความอยากฆ่าตัวตายได้', 'เคยพยายามฆ่าตัวตายมาก่อน',
+  'เคยพยายามฆ่าตัวตายในช่วง 1 ปีที่ผ่านมา', 'มีคนในครอบครัวเคยฆ่าตัวตาย',
+];
+const FALL_RISK_TEXTS = ['เคยหกล้มในช่วง 6 เดือนที่ผ่านมา', 'มีปัญหาการทรงตัวหรือเดินเซ', 'ใช้ยาที่มีผลต่อความง่วงหรือมึนงง', 'สายตาหรือการมองเห็นไม่ดี', 'สิ่งแวดล้อมในบ้านมีความเสี่ยง (พื้นลื่น/แสงน้อย)'];
+const CAREGIVER_BURDEN_TEXTS = ['รู้สึกเหนื่อยล้าจากการดูแล', 'ไม่มีเวลาให้ตัวเอง', 'มีปัญหาด้านการเงินจากการดูแล', 'รู้สึกโดดเดี่ยวไม่มีคนช่วยเหลือ', 'มีความเครียดหรือวิตกกังวล'];
+
+const PATIENTS_SEED = [
+  { id:'p1', name:'นางสมศรี ใจดี', hn:'HN00123', cid:'1234567890123', age:78, gender:'หญิง', village:'บ้านดง ต.เมือง', adlGroup:'ติดสังคม', adlScore:18, riskLevel:'ปานกลาง', cg:'นางสาวมณี รักงาน', status:'นัดวันนี้', avatarBg:'#bfdbfe' },
+  { id:'p2', name:'นายสมชาย รักเรียน', hn:'HN00124', cid:'2234567890123', age:82, gender:'ชาย', village:'บ้านดง ต.เมือง', adlGroup:'ติดบ้าน', adlScore:9, riskLevel:'สูง', cg:'นายสมพงษ์ ดูแลดี', status:'เยี่ยมแล้ว', avatarBg:'#bbf7d0' },
+  { id:'p3', name:'นายบุญมี พึ่งพา', hn:'HN00125', cid:'3234567890123', age:90, gender:'ชาย', village:'บ้านหนองบัว ต.เมือง', adlGroup:'ติดเตียง', adlScore:2, riskLevel:'สูงมาก', cg:'นางสาวมณี รักงาน', status:'เลยนัด', avatarBg:'#fecaca' },
+  { id:'p4', name:'นางประนอม แสนดี', hn:'HN00126', cid:'4234567890123', age:75, gender:'หญิง', village:'บ้านหนองบัว ต.เมือง', adlGroup:'ติดสังคม', adlScore:20, riskLevel:'ต่ำ', cg:'นายสมพงษ์ ดูแลดี', status:'ยังไม่นัด', avatarBg:'#fde68a' },
+  { id:'p5', name:'นายทองอยู่ มีสุข', hn:'HN00127', cid:'5234567890123', age:85, gender:'ชาย', village:'บ้านดง ต.เมือง', adlGroup:'ติดบ้าน', adlScore:11, riskLevel:'ปานกลาง', cg:'นางสาวมณี รักงาน', status:'นัดวันนี้', avatarBg:'#c7d2fe' },
+  { id:'p6', name:'นางอารีย์ ยิ้มแย้ม', hn:'HN00128', cid:'6234567890123', age:88, gender:'หญิง', village:'บ้านสามัคคี ต.เมือง', adlGroup:'ติดเตียง', adlScore:3, riskLevel:'สูงมาก', cg:'นายสมพงษ์ ดูแลดี', status:'เยี่ยมแล้ว', avatarBg:'#fbcfe8' },
+];
+
+function maskCid(cid) { return cid.slice(0,1) + '-XXXX-XXXXX-' + cid.slice(-4,-1) + '-X'; }
+
+/* ================= app component ================= */
+
+class App extends Component {
+  state = {
+    screen: 'login',
+    loginUsername: '', loginPassword: '', loginError: '',
+    role: 'CG',
+    loginMode: 'staff', cidValue: '', passwordVisible: false, rememberMe: false,
+    user: null,
+    patients: PATIENTS_SEED,
+    patientSearch: '', patientFilterStatus: 'all',
+    selectedPatientId: null,
+    visitStep: 1,
+    visitDraft: { caregiverName:'', relation:'', bp:'', hr:'', temp:'', spo2:'', medication:'', nutrition:'', excretion:'', sleep:'', fallRisk:'', caregiverBurden:'', notes:'', nextVisitDate:'', symptoms:{}, services:{}, signed:false },
+    hasWound: null,
+    woundDetail: { location:'', stage:'1', size:'', care:'' },
+    assessmentType: null,
+    barthelAnswers: {},
+    twoQAnswers: {},
+    nineQAnswers: {},
+    eightQAnswers: {},
+    fallRiskAnswers: {},
+    caregiverBurdenAnswers: {},
+    toast: null,
+    history: [],
+  };
+
+  /* ---------- navigation ---------- */
+
+  navPush(screen) {
+    this.setState(s => ({ history: [...s.history, s.screen], screen }));
+  }
+
+  goBack = () => {
+    this.setState(s => {
+      const h = [...s.history];
+      const prev = h.pop() || 'dashboard';
+      return { history: h, screen: prev, assessmentType: prev === 'assessments' ? null : s.assessmentType };
+    });
+  };
+
+  /* ---------- login ---------- */
+
+  onUsernameChange = (e) => this.setState({ loginUsername: e.target.value });
+  onPasswordChange = (e) => this.setState({ loginPassword: e.target.value });
+  onCidChange = (e) => this.setState({ cidValue: e.target.value.replace(/[^0-9]/g, '').slice(0, 13) });
+  setModeCg = () => this.setState({ loginMode: 'cg', loginError: '' });
+  setModeStaff = () => this.setState({ loginMode: 'staff', loginError: '' });
+  togglePasswordVisible = () => this.setState(s => ({ passwordVisible: !s.passwordVisible }));
+  toggleRememberMe = () => this.setState(s => ({ rememberMe: !s.rememberMe }));
+  forgotPassword = (e) => { e.preventDefault(); this.showToast('ลิงก์รีเซ็ตรหัสผ่านถูกส่งไปยังอีเมลที่ลงทะเบียนไว้'); };
+  socialLogin = () => this.showToast('การเข้าสู่ระบบผ่านบุคคลที่สาม — เร็วๆ นี้');
+
+  login = () => {
+    const names = { CG:'คุณมณี รักงาน', CM:'คุณสมหวัง ผู้จัดการ', ADMIN:'ผู้ดูแลระบบ', VIEWER:'ผู้เยี่ยมชม' };
+    if (this.state.loginMode === 'cg') {
+      if (this.state.cidValue.length !== 13) {
+        this.setState({ loginError: 'กรุณากรอกเลขประจำตัวประชาชนให้ครบ 13 หลัก' });
+        return;
+      }
+      this.setState({ user: { name: names.CG, role: 'CG' }, role: 'CG', screen: 'dashboard', history: [], loginError: '' });
+      return;
+    }
+    if (!this.state.loginUsername || !this.state.loginPassword) {
+      this.setState({ loginError: 'กรุณากรอกชื่อผู้ใช้และรหัสผ่าน' });
+      return;
+    }
+    this.setState({ user: { name: names.CM, role: 'CM' }, role: 'CM', screen: 'dashboard', history: [], loginError: '' });
+  };
+
+  logout = () => this.setState({ user: null, screen: 'login', loginUsername: '', loginPassword: '', cidValue: '', history: [] });
+
+  /* ---------- toast ---------- */
+
+  showToast(msg) {
+    this.setState({ toast: msg });
+    clearTimeout(this._t);
+    this._t = setTimeout(() => this.setState({ toast: null }), 2200);
+  }
+
+  /* ---------- nav bar ---------- */
+
+  goDashboard = () => this.setState({ screen: 'dashboard', history: [] });
+  goPatients = () => this.setState({ screen: 'patients', history: [] });
+  goAssessmentsHub = () => this.setState({ screen: 'assessments', assessmentType: null, history: [] });
+  goSettings = () => this.showToast('หน้าตั้งค่า — เร็วๆ นี้');
+
+  /* ---------- patients ---------- */
+
+  selectPatient = (id) => this.navPush2('patientDetail', { selectedPatientId: id });
+  navPush2(screen, extra) {
+    this.setState(s => ({ history: [...s.history, s.screen], screen, ...extra }));
+  }
+
+  /* ---------- visit form ---------- */
+
+  startVisit = () => {
+    this.setState(s => ({
+      history: [...s.history, s.screen], screen: 'visit', visitStep: 1,
+      visitDraft: { caregiverName:'', relation:'', bp:'', hr:'', temp:'', spo2:'', medication:'', nutrition:'', excretion:'', sleep:'', fallRisk:'', caregiverBurden:'', notes:'', nextVisitDate:'', symptoms:{}, services:{}, signed:false },
+      hasWound: null,
+    }));
+  };
+
+  visitNext = () => this.setState(s => ({ visitStep: Math.min(3, s.visitStep + 1) }));
+  visitBack = () => this.setState(s => ({ visitStep: Math.max(1, s.visitStep - 1) }));
+  saveDraft = () => this.showToast('บันทึก Draft แล้ว · จะซิงค์อัตโนมัติเมื่อออนไลน์');
+  submitVisit = () => {
+    this.showToast('บันทึกการเยี่ยมสำเร็จ');
+    this.setState(s => ({ history: s.history.slice(0, -1), screen: 'patientDetail' }));
+  };
+
+  setDraftField(key, value) { this.setState(s => ({ visitDraft: { ...s.visitDraft, [key]: value } })); }
+  setWoundNo = () => this.setState({ hasWound: false });
+  setWoundYes = () => this.setState({ hasWound: true });
+  setWoundField(key, value) { this.setState(s => ({ woundDetail: { ...s.woundDetail, [key]: value } })); }
+  toggleSigned = () => this.setState(s => ({ visitDraft: { ...s.visitDraft, signed: !s.visitDraft.signed } }));
+
+  toggleSymptom(key) { this.setState(s => ({ visitDraft: { ...s.visitDraft, symptoms: { ...s.visitDraft.symptoms, [key]: !s.visitDraft.symptoms[key] } } })); }
+  toggleService(key) { this.setState(s => ({ visitDraft: { ...s.visitDraft, services: { ...s.visitDraft.services, [key]: !s.visitDraft.services[key] } } })); }
+
+  /* ---------- assessments ---------- */
+
+  openAssessment = (type) => {
+    this.setState(s => ({ history: [...s.history, s.screen], screen: 'assessmentDetail', assessmentType: type }));
+  };
+
+  setBarthel(itemKey, value) { this.setState(s => ({ barthelAnswers: { ...s.barthelAnswers, [itemKey]: value } })); }
+  setTwoQ(qKey, value) { this.setState(s => ({ twoQAnswers: { ...s.twoQAnswers, [qKey]: value } })); }
+  setNineQ(qKey, value) { this.setState(s => ({ nineQAnswers: { ...s.nineQAnswers, [qKey]: value } })); }
+  setEightQ(qKey, value) { this.setState(s => ({ eightQAnswers: { ...s.eightQAnswers, [qKey]: value } })); }
+  setFallRisk(qKey, value) { this.setState(s => ({ fallRiskAnswers: { ...s.fallRiskAnswers, [qKey]: value } })); }
+  setCaregiverBurden(qKey, value) { this.setState(s => ({ caregiverBurdenAnswers: { ...s.caregiverBurdenAnswers, [qKey]: value } })); }
+
+  /* ================= derived values ================= */
+
+  computeDerived(s) {
+    const selectedPatient = s.patients.find(p => p.id === s.selectedPatientId) || s.patients[0];
+
+    const statusMeta = (status) => {
+      if (status === 'นัดวันนี้') return { bg:'#dbeafe', color:'#1d4ed8', short:'นัดวันนี้' };
+      if (status === 'เยี่ยมแล้ว') return { bg:'#dcfce7', color:'#166534', short:'เยี่ยมแล้ว' };
+      if (status === 'เลยนัด') return { bg:'#fee2e2', color:'#b91c1c', short:'เลยนัด' };
+      return { bg:'#f1f5f9', color:'#64748b', short:'ยังไม่นัด' };
+    };
+    const riskMeta = (r) => {
+      if (r === 'สูงมาก') return { bg:'#fee2e2', color:'#b91c1c' };
+      if (r === 'สูง') return { bg:'#fef3c7', color:'#b45309' };
+      if (r === 'ปานกลาง') return { bg:'#e0f2fe', color:'#0369a1' };
+      return { bg:'#f0fdf4', color:'#166534' };
+    };
+
+    const total = s.patients.length;
+    const cgCount = new Set(s.patients.map(p => p.cg)).size;
+    const todayCount = s.patients.filter(p => p.status === 'นัดวันนี้').length;
+    const doneCount = s.patients.filter(p => p.status === 'เยี่ยมแล้ว').length;
+    const pendingCount = s.patients.filter(p => p.status === 'ยังไม่นัด').length;
+    const overdueCount = s.patients.filter(p => p.status === 'เลยนัด').length;
+    const highRiskCount = s.patients.filter(p => p.riskLevel === 'สูง' || p.riskLevel === 'สูงมาก').length;
+    const bedboundCount = s.patients.filter(p => p.adlGroup === 'ติดเตียง').length;
+
+    const dashboardCards = [
+      { label:'ผู้มีภาวะพึ่งพิงทั้งหมด', value: total, bg:'#eff6ff', dot:'#2563eb' },
+      { label:'CG / CM ทั้งหมด', value: cgCount + 1, bg:'#f0fdf4', dot:'#16a34a' },
+      { label:'นัดเยี่ยมวันนี้', value: todayCount, bg:'#eff6ff', dot:'#2563eb' },
+      { label:'เยี่ยมแล้ว', value: doneCount, bg:'#f0fdf4', dot:'#16a34a' },
+      { label:'ยังไม่เยี่ยม', value: pendingCount, bg:'#fffbeb', dot:'#d97706' },
+      { label:'เลยนัด', value: overdueCount, bg:'#fef2f2', dot:'#dc2626' },
+      { label:'ความเสี่ยงสูง', value: highRiskCount, bg:'#fef2f2', dot:'#dc2626' },
+      { label:'กลุ่มติดเตียง', value: bedboundCount, bg:'#faf5ff', dot:'#9333ea' },
+    ];
+
+    const monthlyChart = [
+      { label:'ก.พ.', h:'40%' }, { label:'มี.ค.', h:'58%' }, { label:'เม.ย.', h:'70%' },
+      { label:'พ.ค.', h:'52%' }, { label:'มิ.ย.', h:'85%' }, { label:'ก.ค.', h:'64%' },
+    ];
+
+    const patientOpen = (p) => () => this.selectPatient(p.id);
+    const todayVisitPatients = s.patients.filter(p => p.status === 'นัดวันนี้' || p.status === 'เลยนัด').map(p => {
+      const meta = statusMeta(p.status);
+      return { name:p.name, village:p.village, status:p.status, statusShort:meta.short, statusBg:meta.bg, statusColor:meta.color, avatarBg:p.avatarBg, open: patientOpen(p) };
+    });
+
+    const filters = [
+      { key:'all', label:'ทั้งหมด' }, { key:'นัดวันนี้', label:'นัดวันนี้' },
+      { key:'เยี่ยมแล้ว', label:'เยี่ยมแล้ว' }, { key:'เลยนัด', label:'เลยนัด' },
+    ];
+    const statusFilters = filters.map(f => {
+      const active = s.patientFilterStatus === f.key;
+      return { label: f.label, select: () => this.setState({ patientFilterStatus: f.key }),
+        border: active ? '#2563eb' : '#e2e8f0', bg: active ? '#2563eb' : '#ffffff', color: active ? '#ffffff' : '#475569' };
+    });
+
+    const q = (s.patientSearch || '').trim().toLowerCase();
+    const filteredPatientsList = s.patients.filter(p => {
+      if (s.patientFilterStatus !== 'all' && p.status !== s.patientFilterStatus) return false;
+      if (!q) return true;
+      return p.name.toLowerCase().includes(q) || p.hn.toLowerCase().includes(q) || p.village.toLowerCase().includes(q);
+    });
+    const filteredPatients = filteredPatientsList.map(p => {
+      const meta = statusMeta(p.status); const rmeta = riskMeta(p.riskLevel);
+      return { name:p.name, hn:p.hn, age:p.age, village:p.village, adlGroup:p.adlGroup, riskLevel:p.riskLevel,
+        avatarBg:p.avatarBg, statusShort:meta.short, statusBg:meta.bg, statusColor:meta.color,
+        riskBg:rmeta.bg, riskColor:rmeta.color, open: patientOpen(p) };
+    });
+
+    const selectedPatientFull = selectedPatient ? {
+      name: selectedPatient.name, hn: selectedPatient.hn, age: selectedPatient.age, gender: selectedPatient.gender,
+      village: selectedPatient.village, adlGroup: selectedPatient.adlGroup, adlScore: selectedPatient.adlScore,
+      cg: selectedPatient.cg, avatarBg: selectedPatient.avatarBg, cidMasked: maskCid(selectedPatient.cid),
+      adlHistory: [ {label:'ม.ค.',h:'55%'}, {label:'มี.ค.',h:'62%'}, {label:'พ.ค.',h:'70%'}, {label:'ก.ค.', h: Math.max(10, selectedPatient.adlScore*4)+'%'} ],
+      visitLog: [
+        { date:'5 ก.ค. 69', note:'ประเมิน ADL, ให้คำแนะนำโภชนาการ', by:'มณี รักงาน' },
+        { date:'20 มิ.ย. 69', note:'ตรวจวัดความดัน ปกติ', by:'สมพงษ์ ดูแลดี' },
+        { date:'5 มิ.ย. 69', note:'พบแผลกดทับระยะที่ 1 เริ่มดูแล', by:'มณี รักงาน' },
+      ],
+    } : {};
+
+    const symptomDefs = ['ไข้','ไอ','หายใจลำบาก','ปวดข้อ','บวม','แผลใหม่'];
+    const symptomChips = symptomDefs.map(label => {
+      const active = !!s.visitDraft.symptoms[label];
+      return { label, toggle: () => this.toggleSymptom(label), border: active?'#2563eb':'#e2e8f0', bg: active?'#eff6ff':'#ffffff', color: active?'#1d4ed8':'#64748b' };
+    });
+    const serviceDefs = ['ทำแผล','กายภาพเบื้องต้น','ให้คำปรึกษา','ตรวจวัดสัญญาณชีพ','ส่งต่อ รพ.สต.'];
+    const serviceChips = serviceDefs.map(label => {
+      const active = !!s.visitDraft.services[label];
+      return { label, toggle: () => this.toggleService(label), border: active?'#16a34a':'#e2e8f0', bg: active?'#f0fdf4':'#ffffff', color: active?'#166534':'#64748b' };
+    });
+
+    const visitSteps = [1,2,3].map(n => {
+      const active = s.visitStep === n; const done = s.visitStep > n;
+      const labels = {1:'ทั่วไป/Vital',2:'อาการ/ADL',3:'สรุป/ลายเซ็น'};
+      return { n, label: labels[n], bg: active ? '#2563eb' : (done ? '#dcfce7' : '#f1f5f9'), color: active ? '#ffffff' : (done ? '#166534' : '#94a3b8') };
+    });
+
+    const barthelItems = BARTHEL_DEFS.map(def => ({
+      label: def.label,
+      options: def.opts.map(o => {
+        const active = s.barthelAnswers[def.key] === o.v;
+        return { label: o.l, select: () => this.setBarthel(def.key, o.v), border: active?'#2563eb':'#e2e8f0', bg: active?'#eff6ff':'#ffffff', color: active?'#1d4ed8':'#64748b' };
+      }),
+    }));
+    const barthelTotal = BARTHEL_DEFS.reduce((sum, def) => sum + (s.barthelAnswers[def.key] ?? 0), 0);
+    let barthelGroupLabel = 'ติดเตียง', barthelGroupBg = '#fee2e2', barthelGroupColor = '#b91c1c';
+    if (barthelTotal >= 12) { barthelGroupLabel = 'ติดสังคม'; barthelGroupBg = '#dcfce7'; barthelGroupColor = '#166534'; }
+    else if (barthelTotal >= 5) { barthelGroupLabel = 'ติดบ้าน'; barthelGroupBg = '#fef3c7'; barthelGroupColor = '#b45309'; }
+
+    const twoQTexts = ['ในช่วง 2 สัปดาห์ที่ผ่านมา รู้สึกหดหู่ เศร้า หรือท้อแท้สิ้นหวังหรือไม่', 'ในช่วง 2 สัปดาห์ที่ผ่านมา รู้สึกเบื่อ ทำอะไรก็ไม่เพลิดเพลินหรือไม่'];
+    const twoQItems = twoQTexts.map((text, i) => {
+      const key = 'q'+(i+1); const val = s.twoQAnswers[key];
+      return { text, setNo: () => this.setTwoQ(key, false), setYes: () => this.setTwoQ(key, true),
+        noBorder: val===false?'#16a34a':'#e2e8f0', noBg: val===false?'#f0fdf4':'#ffffff', noColor: val===false?'#166534':'#64748b',
+        yesBorder: val===true?'#dc2626':'#e2e8f0', yesBg: val===true?'#fef2f2':'#ffffff', yesColor: val===true?'#b91c1c':'#64748b' };
+    });
+    const twoQAnswered = twoQTexts.every((_, i) => s.twoQAnswers['q'+(i+1)] !== undefined);
+    const twoQBothNo = twoQAnswered && twoQTexts.every((_, i) => s.twoQAnswers['q'+(i+1)] === false);
+    const showNineQ = twoQAnswered && !twoQBothNo;
+
+    const nineQOptLabels = ['0','1','2','3'];
+    const nineQItems = NINE_Q_TEXTS.map((text, i) => {
+      const key = 'q'+(i+1);
+      const options = nineQOptLabels.map((label, v) => {
+        const active = s.nineQAnswers[key] === v;
+        return { value: label, select: () => this.setNineQ(key, v), border: active?'#2563eb':'#e2e8f0', bg: active?'#eff6ff':'#ffffff', color: active?'#1d4ed8':'#64748b' };
+      });
+      return { n: i+1, text, options };
+    });
+    const nineQTotal = NINE_Q_TEXTS.reduce((sum, _, i) => sum + (s.nineQAnswers['q'+(i+1)] ?? 0), 0);
+    const nineQAlert = showNineQ && (s.nineQAnswers['q9'] ?? 0) > 0;
+    const showEightQ = nineQAlert;
+
+    const eightQItems = EIGHT_Q_TEXTS.map((text, i) => {
+      const key = 'q'+(i+1); const val = s.eightQAnswers[key];
+      return { n: i+1, text, setNo: () => this.setEightQ(key, false), setYes: () => this.setEightQ(key, true),
+        noBorder: val===false?'#16a34a':'#e2e8f0', noBg: val===false?'#f0fdf4':'#ffffff', noColor: val===false?'#166534':'#64748b',
+        yesBorder: val===true?'#dc2626':'#e2e8f0', yesBg: val===true?'#fef2f2':'#ffffff', yesColor: val===true?'#b91c1c':'#64748b' };
+    });
+    const eightQTotal = EIGHT_Q_TEXTS.reduce((sum, _, i) => sum + (s.eightQAnswers['q'+(i+1)] ? 1 : 0), 0);
+    const eightQVerdict = eightQTotal === 0 ? 'ไม่มีความเสี่ยง' : (eightQTotal <= 2 ? 'ความเสี่ยงต่ำ' : 'ความเสี่ยงสูง — ควรส่งต่อทันที');
+
+    const simpleType = s.assessmentType;
+    const simpleDefs = simpleType === 'fallrisk' ? FALL_RISK_TEXTS : (simpleType === 'caregiverburden' ? CAREGIVER_BURDEN_TEXTS : []);
+    const simpleAnswers = simpleType === 'fallrisk' ? s.fallRiskAnswers : s.caregiverBurdenAnswers;
+    const simpleSetter = simpleType === 'fallrisk' ? this.setFallRisk.bind(this) : this.setCaregiverBurden.bind(this);
+    const simpleScaleItems = simpleDefs.map((text, i) => {
+      const key = 'q'+(i+1); const val = simpleAnswers[key];
+      return { text, setNo: () => simpleSetter(key, false), setYes: () => simpleSetter(key, true),
+        noBorder: val===false?'#16a34a':'#e2e8f0', noBg: val===false?'#f0fdf4':'#ffffff', noColor: val===false?'#166534':'#64748b',
+        yesBorder: val===true?'#dc2626':'#e2e8f0', yesBg: val===true?'#fef2f2':'#ffffff', yesColor: val===true?'#b91c1c':'#64748b' };
+    });
+    const simpleScaleTotal = simpleDefs.reduce((sum, _, i) => sum + (simpleAnswers['q'+(i+1)] ? 1 : 0), 0);
+    const simpleScaleVerdict = simpleScaleTotal === 0 ? 'ความเสี่ยงต่ำ' : (simpleScaleTotal <= 2 ? 'ความเสี่ยงปานกลาง' : 'ความเสี่ยงสูง');
+    const simpleScaleTitle = simpleType === 'fallrisk' ? 'ประเมินความเสี่ยงหกล้ม' : 'ประเมินภาระผู้ดูแล (Caregiver Burden)';
+
+    const assessmentTypes = [
+      { title:'แบบประเมิน 2Q / 9Q / 8Q', subtitle:'คัดกรองภาวะซึมเศร้า', open: () => this.openAssessment('depression'), bg:'#eff6ff', dot:'#2563eb' },
+      { title:'Barthel ADL Index', subtitle:'ประเมินความสามารถในการดำเนินชีวิต', open: () => this.openAssessment('barthel'), bg:'#f0fdf4', dot:'#16a34a' },
+      { title:'ความเสี่ยงหกล้ม', subtitle:'ประเมินความเสี่ยงการพลัดตกหกล้ม', open: () => this.openAssessment('fallrisk'), bg:'#fffbeb', dot:'#d97706' },
+      { title:'ความเสี่ยงแผลกดทับ', subtitle:'ประเมินและบันทึกแผลกดทับ', open: () => this.openAssessment('pressureulcer'), bg:'#fef2f2', dot:'#dc2626' },
+      { title:'Caregiver Burden', subtitle:'ประเมินภาระของผู้ดูแล', open: () => this.openAssessment('caregiverburden'), bg:'#faf5ff', dot:'#9333ea' },
+      { title:'INHOMESSS', subtitle:'ประเมินสิ่งแวดล้อมและบริบทที่บ้าน', open: () => this.showToast('อยู่ระหว่างพัฒนา'), bg:'#f0f9ff', dot:'#0ea5e9' },
+    ];
+
+    const navDefs = [
+      { key:'dashboard', label:'หน้าหลัก', shape:'8px', go: this.goDashboard },
+      { key:'patients', label:'ผู้ป่วย', shape:'50%', go: this.goPatients },
+      { key:'assessments', label:'แบบประเมิน', shape:'4px', go: this.goAssessmentsHub },
+      { key:'settings', label:'ตั้งค่า', shape:'50% 50% 50% 0', go: this.goSettings },
+    ];
+    const navItems = navDefs.map(n => ({ ...n, color: s.screen === n.key ? '#16a34a' : '#94a3b8' }));
+
+    const nextVisitNumber = (s.patients.findIndex(p=>p.id===s.selectedPatientId)+1) + 3;
+
+    return {
+      today: thaiToday(), dashboardCards, monthlyChart, todayVisitPatients,
+      statusFilters, filteredPatients, selectedPatientFull,
+      symptomChips, serviceChips, visitSteps, nextVisitNumber,
+      barthelItems, barthelTotal, barthelGroupLabel, barthelGroupBg, barthelGroupColor,
+      twoQItems, twoQBothNo, showNineQ, nineQItems, nineQTotal, nineQAlert, showEightQ, eightQItems, eightQTotal, eightQVerdict,
+      simpleScaleTitle, simpleScaleItems, simpleScaleTotal, simpleScaleVerdict,
+      assessmentTypes, navItems,
+    };
+  }
+
+  /* ================= render: login ================= */
+
+  renderLogin(s) {
+    const isCg = s.loginMode === 'cg';
+    return html`
+      <div style="flex:1;display:flex;flex-wrap:wrap;min-height:0;overflow-y:auto;background:#150f3d">
+        <div style="flex:1 1 380px;min-height:260px;position:relative;overflow:hidden;background:linear-gradient(135deg,#1e1b4b 0%,#4c1d95 55%,#312e81 100%);display:flex;flex-direction:column;justify-content:space-between;padding:44px 40px">
+          <div style="position:absolute;top:-60px;right:-60px;width:220px;height:220px;border-radius:50%;background:radial-gradient(circle,rgba(167,139,250,0.35),transparent 70%)"></div>
+          <div style="position:absolute;bottom:-80px;left:-40px;width:260px;height:260px;border-radius:50%;background:radial-gradient(circle,rgba(96,165,250,0.25),transparent 70%)"></div>
+
+          <div style="position:relative;display:flex;align-items:center;gap:12px">
+            <div style="width:44px;height:44px;border-radius:14px;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.2);display:flex;align-items:center;justify-content:center">
+              <div style="width:18px;height:18px;border-radius:6px;background:#34d399"></div>
+            </div>
+            <div style="font-size:18px;font-weight:800;color:#ffffff">LTC Smart Care</div>
+          </div>
+
+          <div style="position:relative;display:flex;flex-direction:column;gap:16px;max-width:420px">
+            <div style="font-size:28px;font-weight:800;color:#ffffff;line-height:1.35">ดูแลผู้มีภาวะพึ่งพิง<br/>ในชุมชนได้ง่ายขึ้น</div>
+            <div style="font-size:14px;color:#c7c3f0;line-height:1.6">บันทึกการเยี่ยม ประเมิน และติดตามผู้ป่วยแบบเรียลไทม์ ผ่านสมาร์ทโฟนของผู้ดูแล</div>
+            <div style="border:1px dashed rgba(255,255,255,0.25);border-radius:20px;height:200px;display:flex;align-items:center;justify-content:center;font-size:12px;color:#a5b4fc;font-family:ui-monospace,monospace;text-align:center;padding:12px;background:rgba(255,255,255,0.04)">[ ภาพประกอบเทคโนโลยีการดูแลสุขภาพ ]</div>
+          </div>
+
+          <div style="position:relative;font-size:12px;color:#9992d6">© 2569 LTC Smart Care · ระบบดูแลผู้มีภาวะพึ่งพิง</div>
+        </div>
+
+        <div style="flex:1 1 380px;display:flex;align-items:center;justify-content:center;padding:32px 24px;background:radial-gradient(120% 120% at 80% 20%,#2e1065 0%,#150f3d 60%);min-height:400px">
+          <div style="width:100%;max-width:400px;background:rgba(255,255,255,0.07);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);border:1px solid rgba(255,255,255,0.14);border-radius:28px;padding:32px 28px;display:flex;flex-direction:column;gap:18px;box-shadow:0 24px 60px rgba(0,0,0,0.35);color:#ffffff">
+
+            <div>
+              <div style="font-size:20px;font-weight:800;color:#ffffff">เข้าสู่ระบบ</div>
+              <div style="font-size:13px;color:#c7c3f0;margin-top:4px">ยินดีต้อนรับกลับ กรุณาเข้าสู่ระบบเพื่อดำเนินการต่อ</div>
+            </div>
+
+            <div style="display:flex;background:rgba(255,255,255,0.08);border-radius:14px;padding:4px;gap:4px">
+              <button onClick=${this.setModeCg} style="flex:1;height:42px;border-radius:11px;border:none;cursor:pointer;font-size:13.5px;font-weight:700;background:${isCg ? '#ffffff' : 'transparent'};color:${isCg ? '#312e81' : '#c7c3f0'};transition:all .18s ease">ผู้ดูแล (CG)</button>
+              <button onClick=${this.setModeStaff} style="flex:1;height:42px;border-radius:11px;border:none;cursor:pointer;font-size:13.5px;font-weight:700;background:${!isCg ? '#ffffff' : 'transparent'};color:${!isCg ? '#312e81' : '#c7c3f0'};transition:all .18s ease">เจ้าหน้าที่</button>
+            </div>
+
+            ${s.loginError ? html`<div style="background:rgba(248,113,113,0.15);border:1px solid rgba(248,113,113,0.4);color:#fecaca;font-size:13px;padding:10px 12px;border-radius:12px">${s.loginError}</div>` : null}
+
+            ${isCg ? html`
+              <div style="display:flex;flex-direction:column;gap:6px">
+                <label style="font-size:12.5px;font-weight:600;color:#d8d5f2">เลขประจำตัวประชาชน (13 หลัก)</label>
+                <input type="text" inputMode="numeric" maxLength="13" value=${s.cidValue} onInput=${this.onCidChange} placeholder="1-2345-67890-12-3" style="height:50px;border-radius:13px;border:1px solid rgba(255,255,255,0.18);padding:0 14px;font-size:15px;outline:none;background:rgba(255,255,255,0.06);color:#ffffff;letter-spacing:1px"/>
+              </div>
+            ` : html`
+              <div style="display:flex;flex-direction:column;gap:14px">
+                <div style="display:flex;flex-direction:column;gap:6px">
+                  <label style="font-size:12.5px;font-weight:600;color:#d8d5f2">Username หรือ Email</label>
+                  <input type="text" value=${s.loginUsername} onInput=${this.onUsernameChange} placeholder="cg001 หรือ name@ltc.go.th" style="height:50px;border-radius:13px;border:1px solid rgba(255,255,255,0.18);padding:0 14px;font-size:15px;outline:none;background:rgba(255,255,255,0.06);color:#ffffff"/>
+                </div>
+                <div style="display:flex;flex-direction:column;gap:6px">
+                  <label style="font-size:12.5px;font-weight:600;color:#d8d5f2">รหัสผ่าน</label>
+                  <div style="position:relative;display:flex;align-items:center">
+                    <input type=${s.passwordVisible ? 'text' : 'password'} value=${s.loginPassword} onInput=${this.onPasswordChange} placeholder="••••••••" style="width:100%;height:50px;border-radius:13px;border:1px solid rgba(255,255,255,0.18);padding:0 46px 0 14px;font-size:15px;outline:none;background:rgba(255,255,255,0.06);color:#ffffff"/>
+                    <button onClick=${this.togglePasswordVisible} aria-label="แสดง/ซ่อนรหัสผ่าน" style="position:absolute;right:6px;width:36px;height:36px;border-radius:10px;border:none;background:transparent;color:#c7c3f0;cursor:pointer;display:flex;align-items:center;justify-content:center">
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r=${s.passwordVisible ? 3 : 0}/></svg>
+                    </button>
+                  </div>
+                </div>
+                <div style="display:flex;align-items:center;justify-content:space-between">
+                  <button onClick=${this.toggleRememberMe} style="display:flex;align-items:center;gap:8px;border:none;background:transparent;cursor:pointer;padding:0">
+                    <div style="width:18px;height:18px;border-radius:5px;border:1.5px solid ${s.rememberMe ? '#a5b4fc' : 'rgba(255,255,255,0.35)'};background:${s.rememberMe ? '#a5b4fc' : 'transparent'};display:flex;align-items:center;justify-content:center">
+                      ${s.rememberMe ? html`<div style="width:9px;height:9px;border-radius:2px;background:#0f0a2e"></div>` : null}
+                    </div>
+                    <span style="font-size:12.5px;color:#d8d5f2;white-space:nowrap">จดจำฉัน</span>
+                  </button>
+                  <a href="#" onClick=${this.forgotPassword} style="font-size:12.5px;color:#a5b4fc;text-decoration:none;font-weight:600">ลืมรหัสผ่าน?</a>
+                </div>
+              </div>
+            `}
+
+            <button onClick=${this.login} class="btn-primary-gradient" style="height:52px;border-radius:14px;border:none;background:linear-gradient(135deg,#7c3aed,#4f46e5);color:#ffffff;font-size:16px;font-weight:700;cursor:pointer;box-shadow:0 10px 24px rgba(124,58,237,0.4);transition:transform .15s ease,box-shadow .15s ease">เข้าสู่ระบบ</button>
+
+            <div style="display:flex;align-items:center;gap:10px;color:#8f8ac0;font-size:12px">
+              <div style="flex:1;height:1px;background:rgba(255,255,255,0.14)"></div>
+              หรือเข้าสู่ระบบด้วย
+              <div style="flex:1;height:1px;background:rgba(255,255,255,0.14)"></div>
+            </div>
+
+            <div style="display:flex;gap:12px">
+              <button onClick=${this.socialLogin} class="btn-social" style="flex:1;height:48px;border-radius:13px;border:1px solid rgba(255,255,255,0.16);background:rgba(255,255,255,0.05);color:#ffffff;font-size:13.5px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:background .15s ease,transform .15s ease">
+                <div style="width:20px;height:20px;border-radius:50%;background:#ffffff;color:#ea4335;font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center;font-family:ui-monospace,monospace">G</div>
+                Google
+              </button>
+              <button onClick=${this.socialLogin} class="btn-social" style="flex:1;height:48px;border-radius:13px;border:1px solid rgba(255,255,255,0.16);background:rgba(255,255,255,0.05);color:#ffffff;font-size:13.5px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:background .15s ease,transform .15s ease">
+                <div style="width:20px;height:20px;border-radius:50%;background:#1877f2;color:#ffffff;font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center;font-family:ui-monospace,monospace">f</div>
+                Facebook
+              </button>
+            </div>
+
+            <div style="text-align:center;font-size:11.5px;color:#7b769f;margin-top:2px">เวอร์ชันสาธิต · ใช้ข้อมูลจำลอง</div>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  /* ================= render: shell + header + nav ================= */
+
+  renderHeader(s, d) {
+    const roleLabels = { CG:'Care Giver', CM:'Case Manager', ADMIN:'ผู้ดูแลระบบ', VIEWER:'ผู้เยี่ยมชม' };
+    const headerTitleMap = {
+      dashboard: 'LTC Smart Care', patients: 'รายชื่อผู้ป่วย',
+      patientDetail: d.selectedPatientFull.name || 'ข้อมูลผู้ป่วย',
+      visit: 'บันทึกการเยี่ยม', assessments: 'แบบประเมิน',
+      assessmentDetail: s.assessmentType === 'depression' ? '2Q / 9Q / 8Q' : s.assessmentType === 'barthel' ? 'Barthel ADL' : s.assessmentType === 'pressureulcer' ? 'แผลกดทับ' : s.assessmentType === 'fallrisk' ? 'ความเสี่ยงหกล้ม' : 'Caregiver Burden',
+    };
+    const isNotDashboard = s.screen !== 'dashboard';
+    return html`
+      <div style="height:56px;flex:none;background:#2563eb;display:flex;align-items:center;justify-content:space-between;padding:0 16px;color:#ffffff;box-shadow:0 2px 8px rgba(37,99,235,0.25);z-index:5">
+        <div style="display:flex;align-items:center;gap:10px">
+          ${isNotDashboard ? html`<button onClick=${this.goBack} aria-label="ย้อนกลับ" style="width:32px;height:32px;border-radius:8px;border:none;background:rgba(255,255,255,0.15);color:#ffffff;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:18px">‹</button>` : null}
+          <div style="font-size:16px;font-weight:700">${headerTitleMap[s.screen] || 'LTC Smart Care'}</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <div style="font-size:11px;background:rgba(255,255,255,0.18);padding:4px 10px;border-radius:999px;font-weight:600">${s.user ? roleLabels[s.user.role] : ''}</div>
+          <button onClick=${this.logout} aria-label="ออกจากระบบ" style="width:32px;height:32px;border-radius:999px;border:none;background:rgba(255,255,255,0.18);color:#ffffff;font-size:13px;font-weight:700;cursor:pointer">${s.user ? (s.user.role||'U').slice(0,1) : 'U'}</button>
+        </div>
+      </div>
+    `;
+  }
+
+  renderBottomNav(s, d) {
+    return html`
+      <div style="height:64px;flex:none;background:#ffffff;border-top:1px solid #e2e8f0;display:flex;align-items:stretch;position:relative;z-index:5">
+        ${d.navItems.map(n => html`
+          <button onClick=${n.go} style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;border:none;background:transparent;cursor:pointer">
+            <div style="width:22px;height:22px;border-radius:${n.shape};background:${n.color}"></div>
+            <div style="font-size:10.5px;font-weight:600;color:${n.color}">${n.label}</div>
+          </button>
+        `)}
+      </div>
+    `;
+  }
+
+  /* ================= render: dashboard ================= */
+
+  renderDashboard(s, d) {
+    return html`
+      <div style="display:flex;flex-direction:column;gap:16px">
+        <div style="display:flex;justify-content:space-between;align-items:baseline">
+          <div style="font-size:14px;color:#64748b">สวัสดี, ${s.user ? s.user.name : ''} · ${d.today}</div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+          ${d.dashboardCards.map(card => html`
+            <div style="background:#ffffff;border-radius:20px;padding:16px;box-shadow:0 1px 3px rgba(15,23,42,0.06);border:1px solid #eef2f7;display:flex;flex-direction:column;gap:6px">
+              <div style="width:36px;height:36px;border-radius:10px;background:${card.bg};display:flex;align-items:center;justify-content:center">
+                <div style="width:14px;height:14px;border-radius:4px;background:${card.dot}"></div>
+              </div>
+              <div style="font-size:24px;font-weight:800;color:#0f172a">${card.value}</div>
+              <div style="font-size:12.5px;color:#64748b;line-height:1.3">${card.label}</div>
+            </div>
+          `)}
+        </div>
+
+        <div style="background:#ffffff;border-radius:20px;padding:18px;box-shadow:0 1px 3px rgba(15,23,42,0.06);border:1px solid #eef2f7;display:flex;flex-direction:column;gap:14px">
+          <div style="font-size:14.5px;font-weight:700;color:#0f172a">การเยี่ยมรายเดือน</div>
+          <div style="display:flex;align-items:flex-end;gap:10px;height:120px;padding:0 4px">
+            ${d.monthlyChart.map(m => html`
+              <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;height:100%;justify-content:flex-end">
+                <div style="width:100%;max-width:26px;border-radius:6px 6px 0 0;background:#2563eb;height:${m.h}"></div>
+                <div style="font-size:11px;color:#94a3b8">${m.label}</div>
+              </div>
+            `)}
+          </div>
+        </div>
+
+        <div style="background:#ffffff;border-radius:20px;padding:18px;box-shadow:0 1px 3px rgba(15,23,42,0.06);border:1px solid #eef2f7;display:flex;flex-direction:column;gap:10px">
+          <div style="font-size:14.5px;font-weight:700;color:#0f172a">นัดเยี่ยมวันนี้</div>
+          ${d.todayVisitPatients.map(p => html`
+            <div onClick=${p.open} style="display:flex;align-items:center;gap:12px;padding:10px;border-radius:14px;background:#f8fafc;cursor:pointer">
+              <div style="width:40px;height:40px;border-radius:12px;background:${p.avatarBg};flex:none"></div>
+              <div style="flex:1;min-width:0">
+                <div style="font-size:14px;font-weight:600;color:#0f172a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${p.name}</div>
+                <div style="font-size:12px;color:#64748b">${p.village} · ${p.status}</div>
+              </div>
+              <div style="font-size:12px;font-weight:700;padding:4px 10px;border-radius:999px;background:${p.statusBg};color:${p.statusColor}">${p.statusShort}</div>
+            </div>
+          `)}
+        </div>
+      </div>
+    `;
+  }
+
+  /* ================= render: patients list + detail ================= */
+
+  renderPatients(s, d) {
+    return html`
+      <div style="display:flex;flex-direction:column;gap:12px">
+        <div style="position:relative">
+          <input type="text" value=${s.patientSearch} onInput=${e => this.setState({ patientSearch: e.target.value })} placeholder="ค้นหาชื่อ, HN, หมู่บ้าน..." style="width:100%;height:46px;border-radius:14px;border:1px solid #e2e8f0;padding:0 14px;font-size:14px;background:#ffffff;outline:none"/>
+        </div>
+        <div style="display:flex;gap:8px;overflow-x:auto;padding-bottom:2px">
+          ${d.statusFilters.map(f => html`
+            <button onClick=${f.select} style="flex:none;height:34px;padding:0 14px;border-radius:999px;border:1px solid ${f.border};background:${f.bg};color:${f.color};font-size:12.5px;font-weight:600;cursor:pointer">${f.label}</button>
+          `)}
+        </div>
+
+        <div style="display:flex;flex-direction:column;gap:10px">
+          ${d.filteredPatients.map(p => html`
+            <div onClick=${p.open} style="background:#ffffff;border-radius:18px;padding:14px;box-shadow:0 1px 3px rgba(15,23,42,0.06);border:1px solid #eef2f7;display:flex;gap:12px;cursor:pointer">
+              <div style="width:52px;height:52px;border-radius:14px;background:${p.avatarBg};flex:none"></div>
+              <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:4px">
+                <div style="display:flex;justify-content:space-between;gap:8px">
+                  <div style="font-size:15px;font-weight:700;color:#0f172a">${p.name}</div>
+                  <div style="font-size:11.5px;font-weight:700;padding:3px 9px;border-radius:999px;background:${p.statusBg};color:${p.statusColor};white-space:nowrap">${p.statusShort}</div>
+                </div>
+                <div style="font-size:12.5px;color:#64748b">HN ${p.hn} · อายุ ${p.age} ปี · ${p.village}</div>
+                <div style="display:flex;gap:6px;margin-top:2px">
+                  <div style="font-size:11px;padding:3px 8px;border-radius:8px;background:#eff6ff;color:#2563eb;font-weight:600">${p.adlGroup}</div>
+                  <div style="font-size:11px;padding:3px 8px;border-radius:8px;background:${p.riskBg};color:${p.riskColor};font-weight:600">เสี่ยง${p.riskLevel}</div>
+                </div>
+              </div>
+            </div>
+          `)}
+          ${d.filteredPatients.length === 0 ? html`<div style="text-align:center;padding:40px 0;color:#94a3b8;font-size:13.5px">ไม่พบผู้ป่วยที่ตรงกับเงื่อนไข</div>` : null}
+        </div>
+      </div>
+    `;
+  }
+
+  renderPatientDetail(s, d) {
+    const p = d.selectedPatientFull;
+    return html`
+      <div style="display:flex;flex-direction:column;gap:14px">
+        <div style="background:#ffffff;border-radius:20px;padding:18px;box-shadow:0 1px 3px rgba(15,23,42,0.06);border:1px solid #eef2f7;display:flex;flex-direction:column;gap:12px">
+          <div style="display:flex;gap:14px;align-items:center">
+            <div style="width:64px;height:64px;border-radius:16px;background:${p.avatarBg};flex:none"></div>
+            <div style="flex:1;min-width:0">
+              <div style="font-size:17px;font-weight:800;color:#0f172a">${p.name}</div>
+              <div style="font-size:13px;color:#64748b">HN ${p.hn} · CID ${p.cidMasked}</div>
+            </div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;font-size:13px">
+            <div style="background:#f8fafc;border-radius:12px;padding:10px"><div style="color:#94a3b8;font-size:11.5px">อายุ / เพศ</div><div style="font-weight:600;margin-top:2px">${p.age} ปี · ${p.gender}</div></div>
+            <div style="background:#f8fafc;border-radius:12px;padding:10px"><div style="color:#94a3b8;font-size:11.5px">หมู่บ้าน/ตำบล</div><div style="font-weight:600;margin-top:2px">${p.village}</div></div>
+            <div style="background:#f8fafc;border-radius:12px;padding:10px"><div style="color:#94a3b8;font-size:11.5px">กลุ่มภาวะพึ่งพิง</div><div style="font-weight:600;margin-top:2px">${p.adlGroup} (ADL ${p.adlScore})</div></div>
+            <div style="background:#f8fafc;border-radius:12px;padding:10px"><div style="color:#94a3b8;font-size:11.5px">CG ผู้รับผิดชอบ</div><div style="font-weight:600;margin-top:2px">${p.cg}</div></div>
+          </div>
+          <button onClick=${this.startVisit} style="height:50px;border-radius:14px;border:none;background:#16a34a;color:#ffffff;font-size:15px;font-weight:700;cursor:pointer">+ บันทึกการเยี่ยมวันนี้</button>
+        </div>
+
+        <div style="background:#ffffff;border-radius:20px;padding:18px;box-shadow:0 1px 3px rgba(15,23,42,0.06);border:1px solid #eef2f7;display:flex;flex-direction:column;gap:12px">
+          <div style="font-size:14.5px;font-weight:700;color:#0f172a">แนวโน้มคะแนน ADL</div>
+          <div style="display:flex;align-items:flex-end;gap:10px;height:80px">
+            ${p.adlHistory.map(h => html`
+              <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;height:100%;justify-content:flex-end">
+                <div style="width:100%;max-width:22px;border-radius:6px 6px 0 0;background:#0ea5e9;height:${h.h}"></div>
+                <div style="font-size:10.5px;color:#94a3b8">${h.label}</div>
+              </div>
+            `)}
+          </div>
+        </div>
+
+        <div style="background:#ffffff;border-radius:20px;padding:18px;box-shadow:0 1px 3px rgba(15,23,42,0.06);border:1px solid #eef2f7;display:flex;flex-direction:column;gap:10px">
+          <div style="font-size:14.5px;font-weight:700;color:#0f172a">ประวัติการเยี่ยม</div>
+          ${p.visitLog.map(v => html`
+            <div style="display:flex;gap:10px;padding:10px 0;border-bottom:1px solid #f1f5f9">
+              <div style="width:8px;height:8px;border-radius:999px;background:#16a34a;margin-top:6px;flex:none"></div>
+              <div>
+                <div style="font-size:13.5px;font-weight:600">${v.date} — ${v.note}</div>
+                <div style="font-size:12px;color:#94a3b8">โดย ${v.by}</div>
+              </div>
+            </div>
+          `)}
+        </div>
+      </div>
+    `;
+  }
+
+  /* ================= render: visit form ================= */
+
+  renderWoundCardFull(s) {
+    const wd = s.woundDetail;
+    return html`
+      <div style="background:#ffffff;border-radius:18px;padding:16px;box-shadow:0 1px 3px rgba(15,23,42,0.06);border:1px solid #eef2f7;display:flex;flex-direction:column;gap:10px">
+        <div style="font-size:14px;font-weight:700">แผลกดทับ</div>
+        <div style="display:flex;gap:10px">
+          <button onClick=${this.setWoundNo} style="flex:1;height:44px;border-radius:12px;border:1.5px solid ${s.hasWound===false?'#16a34a':'#e2e8f0'};background:${s.hasWound===false?'#f0fdf4':'#ffffff'};color:${s.hasWound===false?'#166534':'#64748b'};font-size:13.5px;font-weight:700;cursor:pointer">ไม่มีแผล</button>
+          <button onClick=${this.setWoundYes} style="flex:1;height:44px;border-radius:12px;border:1.5px solid ${s.hasWound===true?'#dc2626':'#e2e8f0'};background:${s.hasWound===true?'#fef2f2':'#ffffff'};color:${s.hasWound===true?'#b91c1c':'#64748b'};font-size:13.5px;font-weight:700;cursor:pointer">พบแผลกดทับ</button>
+        </div>
+        ${s.hasWound ? html`
+          <div style="display:flex;flex-direction:column;gap:10px;background:#fef2f2;border-radius:14px;padding:12px;margin-top:4px">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+              <div style="display:flex;flex-direction:column;gap:4px"><label style="font-size:12px;color:#64748b">ตำแหน่งแผล</label><input type="text" value=${wd.location} onInput=${e => this.setWoundField('location', e.target.value)} style="height:42px;border-radius:10px;border:1px solid #fecaca;padding:0 10px;font-size:13.5px;outline:none;background:#ffffff"/></div>
+              <div style="display:flex;flex-direction:column;gap:4px"><label style="font-size:12px;color:#64748b">ระยะ (Stage)</label>
+                <select value=${wd.stage} onChange=${e => this.setWoundField('stage', e.target.value)} style="height:42px;border-radius:10px;border:1px solid #fecaca;padding:0 10px;font-size:13.5px;background:#ffffff;outline:none">
+                  <option value="1">ระยะที่ 1</option><option value="2">ระยะที่ 2</option><option value="3">ระยะที่ 3</option><option value="4">ระยะที่ 4</option>
+                </select>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:4px"><label style="font-size:12px;color:#64748b">ขนาด (ซม.)</label><input type="text" value=${wd.size} onInput=${e => this.setWoundField('size', e.target.value)} style="height:42px;border-radius:10px;border:1px solid #fecaca;padding:0 10px;font-size:13.5px;outline:none;background:#ffffff"/></div>
+              <div style="display:flex;flex-direction:column;gap:4px"><label style="font-size:12px;color:#64748b">การดูแลแผล</label><input type="text" value=${wd.care} onInput=${e => this.setWoundField('care', e.target.value)} style="height:42px;border-radius:10px;border:1px solid #fecaca;padding:0 10px;font-size:13.5px;outline:none;background:#ffffff"/></div>
+            </div>
+            <div style="border:1.5px dashed #fca5a5;border-radius:12px;height:88px;display:flex;align-items:center;justify-content:center;font-size:11.5px;color:#dc2626;font-family:ui-monospace,monospace;text-align:center;padding:8px">[ ภาพถ่ายแผล — แนบรูป ]</div>
+          </div>
+        ` : null}
+      </div>
+    `;
+  }
+
+  renderVisitStep1(s, d) {
+    const vd = s.visitDraft;
+    return html`
+      <div style="display:flex;flex-direction:column;gap:14px">
+        <div style="background:#ffffff;border-radius:18px;padding:16px;box-shadow:0 1px 3px rgba(15,23,42,0.06);border:1px solid #eef2f7;display:flex;flex-direction:column;gap:10px">
+          <div style="font-size:14px;font-weight:700">ข้อมูลทั่วไป</div>
+          <div style="font-size:12.5px;color:#64748b">ผู้เยี่ยม: ${s.user ? s.user.name : ''} · GPS: บันทึกอัตโนมัติ ✓</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+            <div style="display:flex;flex-direction:column;gap:4px"><label style="font-size:12px;color:#64748b">ผู้ดูแลหลักที่พบ</label><input type="text" value=${vd.caregiverName} onInput=${e => this.setDraftField('caregiverName', e.target.value)} style="height:44px;border-radius:10px;border:1px solid #e2e8f0;padding:0 10px;font-size:13.5px;outline:none"/></div>
+            <div style="display:flex;flex-direction:column;gap:4px"><label style="font-size:12px;color:#64748b">ความสัมพันธ์</label><input type="text" value=${vd.relation} onInput=${e => this.setDraftField('relation', e.target.value)} style="height:44px;border-radius:10px;border:1px solid #e2e8f0;padding:0 10px;font-size:13.5px;outline:none"/></div>
+          </div>
+        </div>
+
+        <div style="background:#ffffff;border-radius:18px;padding:16px;box-shadow:0 1px 3px rgba(15,23,42,0.06);border:1px solid #eef2f7;display:flex;flex-direction:column;gap:10px">
+          <div style="font-size:14px;font-weight:700">สัญญาณชีพ (Vital Signs)</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+            <div style="display:flex;flex-direction:column;gap:4px"><label style="font-size:12px;color:#64748b">ความดันโลหิต</label><input type="text" placeholder="120/80" value=${vd.bp} onInput=${e => this.setDraftField('bp', e.target.value)} style="height:44px;border-radius:10px;border:1px solid #e2e8f0;padding:0 10px;font-size:13.5px;outline:none"/></div>
+            <div style="display:flex;flex-direction:column;gap:4px"><label style="font-size:12px;color:#64748b">ชีพจร (ครั้ง/นาที)</label><input type="text" value=${vd.hr} onInput=${e => this.setDraftField('hr', e.target.value)} style="height:44px;border-radius:10px;border:1px solid #e2e8f0;padding:0 10px;font-size:13.5px;outline:none"/></div>
+            <div style="display:flex;flex-direction:column;gap:4px"><label style="font-size:12px;color:#64748b">อุณหภูมิ (°C)</label><input type="text" value=${vd.temp} onInput=${e => this.setDraftField('temp', e.target.value)} style="height:44px;border-radius:10px;border:1px solid #e2e8f0;padding:0 10px;font-size:13.5px;outline:none"/></div>
+            <div style="display:flex;flex-direction:column;gap:4px"><label style="font-size:12px;color:#64748b">SpO2 (%)</label><input type="text" value=${vd.spo2} onInput=${e => this.setDraftField('spo2', e.target.value)} style="height:44px;border-radius:10px;border:1px solid #e2e8f0;padding:0 10px;font-size:13.5px;outline:none"/></div>
+          </div>
+        </div>
+
+        ${this.renderWoundCardFull(s)}
+      </div>
+    `;
+  }
+
+  renderVisitStep2(s, d) {
+    const vd = s.visitDraft;
+    return html`
+      <div style="display:flex;flex-direction:column;gap:14px">
+        <div style="background:#ffffff;border-radius:18px;padding:16px;box-shadow:0 1px 3px rgba(15,23,42,0.06);border:1px solid #eef2f7;display:flex;flex-direction:column;gap:10px">
+          <div style="font-size:14px;font-weight:700">อาการและปัญหาที่พบ</div>
+          <div style="display:flex;flex-wrap:wrap;gap:8px">
+            ${d.symptomChips.map(c => html`
+              <button onClick=${c.toggle} style="height:36px;padding:0 14px;border-radius:999px;border:1.5px solid ${c.border};background:${c.bg};color:${c.color};font-size:12.5px;font-weight:600;cursor:pointer">${c.label}</button>
+            `)}
+          </div>
+        </div>
+
+        <div style="background:#ffffff;border-radius:18px;padding:16px;box-shadow:0 1px 3px rgba(15,23,42,0.06);border:1px solid #eef2f7;display:flex;flex-direction:column;gap:10px">
+          <div style="font-size:14px;font-weight:700">การรับประทานยา / โภชนาการ / การขับถ่าย / การนอน</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+            <select value=${vd.medication} onChange=${e => this.setDraftField('medication', e.target.value)} style="height:44px;border-radius:10px;border:1px solid #e2e8f0;padding:0 10px;font-size:13px;background:#f8fafc;outline:none"><option value="">การรับประทานยา</option><option>ครบถ้วนตามแผน</option><option>ขาดยาบางมื้อ</option><option>ขาดยาต่อเนื่อง</option></select>
+            <select value=${vd.nutrition} onChange=${e => this.setDraftField('nutrition', e.target.value)} style="height:44px;border-radius:10px;border:1px solid #e2e8f0;padding:0 10px;font-size:13px;background:#f8fafc;outline:none"><option value="">โภชนาการ</option><option>ปกติ</option><option>รับประทานได้น้อย</option><option>ให้อาหารทางสาย</option></select>
+            <select value=${vd.excretion} onChange=${e => this.setDraftField('excretion', e.target.value)} style="height:44px;border-radius:10px;border:1px solid #e2e8f0;padding:0 10px;font-size:13px;background:#f8fafc;outline:none"><option value="">การขับถ่าย</option><option>ปกติ</option><option>ท้องผูก</option><option>ใช้สายสวน/ผ้าอ้อม</option></select>
+            <select value=${vd.sleep} onChange=${e => this.setDraftField('sleep', e.target.value)} style="height:44px;border-radius:10px;border:1px solid #e2e8f0;padding:0 10px;font-size:13px;background:#f8fafc;outline:none"><option value="">การนอนหลับ</option><option>หลับปกติ</option><option>นอนไม่หลับ</option><option>ต้องใช้ยานอนหลับ</option></select>
+          </div>
+        </div>
+
+        <div style="background:#ffffff;border-radius:18px;padding:16px;box-shadow:0 1px 3px rgba(15,23,42,0.06);border:1px solid #eef2f7;display:flex;flex-direction:column;gap:10px">
+          <div style="font-size:14px;font-weight:700">ความเสี่ยงหกล้ม / ภาระผู้ดูแล</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+            <select value=${vd.fallRisk} onChange=${e => this.setDraftField('fallRisk', e.target.value)} style="height:44px;border-radius:10px;border:1px solid #e2e8f0;padding:0 10px;font-size:13px;background:#f8fafc;outline:none"><option value="">ความเสี่ยงหกล้ม</option><option>ต่ำ</option><option>ปานกลาง</option><option>สูง</option></select>
+            <select value=${vd.caregiverBurden} onChange=${e => this.setDraftField('caregiverBurden', e.target.value)} style="height:44px;border-radius:10px;border:1px solid #e2e8f0;padding:0 10px;font-size:13px;background:#f8fafc;outline:none"><option value="">ภาระผู้ดูแล</option><option>น้อย</option><option>ปานกลาง</option><option>สูง</option></select>
+          </div>
+          <div style="font-size:12px;color:#94a3b8">ต้องการประเมินแบบละเอียด? ไปที่แท็บ "แบบประเมิน"</div>
+        </div>
+      </div>
+    `;
+  }
+
+  renderVisitStep3(s, d) {
+    const vd = s.visitDraft;
+    return html`
+      <div style="display:flex;flex-direction:column;gap:14px">
+        <div style="background:#ffffff;border-radius:18px;padding:16px;box-shadow:0 1px 3px rgba(15,23,42,0.06);border:1px solid #eef2f7;display:flex;flex-direction:column;gap:10px">
+          <div style="font-size:14px;font-weight:700">บริการที่ให้ในวันนี้</div>
+          <div style="display:flex;flex-wrap:wrap;gap:8px">
+            ${d.serviceChips.map(c => html`
+              <button onClick=${c.toggle} style="height:36px;padding:0 14px;border-radius:999px;border:1.5px solid ${c.border};background:${c.bg};color:${c.color};font-size:12.5px;font-weight:600;cursor:pointer">${c.label}</button>
+            `)}
+          </div>
+        </div>
+
+        <div style="background:#ffffff;border-radius:18px;padding:16px;box-shadow:0 1px 3px rgba(15,23,42,0.06);border:1px solid #eef2f7;display:flex;flex-direction:column;gap:10px">
+          <div style="font-size:14px;font-weight:700">คำแนะนำ / แผนติดตามครั้งต่อไป</div>
+          <textarea value=${vd.notes} onInput=${e => this.setDraftField('notes', e.target.value)} placeholder="บันทึกคำแนะนำที่ให้กับผู้ดูแล..." style="min-height:80px;border-radius:12px;border:1px solid #e2e8f0;padding:10px;font-size:13.5px;outline:none;resize:vertical;font-family:inherit"></textarea>
+          <input type="date" value=${vd.nextVisitDate} onInput=${e => this.setDraftField('nextVisitDate', e.target.value)} style="height:44px;border-radius:10px;border:1px solid #e2e8f0;padding:0 10px;font-size:13.5px;outline:none"/>
+        </div>
+
+        <div style="background:#ffffff;border-radius:18px;padding:16px;box-shadow:0 1px 3px rgba(15,23,42,0.06);border:1px solid #eef2f7;display:flex;flex-direction:column;gap:10px">
+          <div style="font-size:14px;font-weight:700">ภาพก่อน/หลังการดูแล</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+            <div style="border:1.5px dashed #cbd5e1;border-radius:12px;height:76px;display:flex;align-items:center;justify-content:center;font-size:11px;color:#94a3b8;font-family:ui-monospace,monospace;text-align:center">[ ภาพก่อนดูแล ]</div>
+            <div style="border:1.5px dashed #cbd5e1;border-radius:12px;height:76px;display:flex;align-items:center;justify-content:center;font-size:11px;color:#94a3b8;font-family:ui-monospace,monospace;text-align:center">[ ภาพหลังดูแล ]</div>
+          </div>
+        </div>
+
+        <div style="background:#ffffff;border-radius:18px;padding:16px;box-shadow:0 1px 3px rgba(15,23,42,0.06);border:1px solid #eef2f7;display:flex;flex-direction:column;gap:10px">
+          <div style="font-size:14px;font-weight:700">ลายเซ็นผู้เยี่ยม / ผู้ป่วยหรือญาติ</div>
+          <div onClick=${this.toggleSigned} style="border:1.5px dashed ${vd.signed?'#16a34a':'#cbd5e1'};background:${vd.signed?'#f0fdf4':'#ffffff'};border-radius:12px;height:76px;display:flex;align-items:center;justify-content:center;font-size:12.5px;color:${vd.signed?'#166534':'#94a3b8'};cursor:pointer;font-weight:600">${vd.signed ? '✓ ลงลายเซ็นแล้ว' : '[ แตะเพื่อลงลายเซ็น ]'}</div>
+        </div>
+      </div>
+    `;
+  }
+
+  renderVisit(s, d) {
+    return html`
+      <div style="display:flex;flex-direction:column;gap:14px">
+        <div style="display:flex;gap:8px">
+          ${d.visitSteps.map(st => html`
+            <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:6px">
+              <div style="width:30px;height:30px;border-radius:999px;background:${st.bg};color:${st.color};display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700">${st.n}</div>
+              <div style="font-size:11px;color:${st.color};font-weight:600;text-align:center">${st.label}</div>
+            </div>
+          `)}
+        </div>
+
+        <div style="font-size:13px;color:#64748b;background:#eff6ff;border-radius:12px;padding:10px 12px">ผู้ป่วย: <b>${d.selectedPatientFull.name}</b> · ครั้งที่เยี่ยม #${d.nextVisitNumber}</div>
+
+        ${s.visitStep === 1 ? this.renderVisitStep1(s, d) : null}
+        ${s.visitStep === 2 ? this.renderVisitStep2(s, d) : null}
+        ${s.visitStep === 3 ? this.renderVisitStep3(s, d) : null}
+
+        <div style="height:4px"></div>
+      </div>
+    `;
+  }
+
+  renderVisitStickyBar(s) {
+    return html`
+      <div style="position:absolute;bottom:64px;left:0;right:0;background:#ffffff;border-top:1px solid #e2e8f0;padding:10px 16px;display:flex;gap:10px;box-shadow:0 -4px 12px rgba(15,23,42,0.06)">
+        <button onClick=${this.saveDraft} style="flex:1;height:48px;border-radius:14px;border:1.5px solid #e2e8f0;background:#ffffff;color:#475569;font-size:14px;font-weight:700;cursor:pointer">บันทึก Draft</button>
+        ${s.visitStep !== 3
+          ? html`<button onClick=${this.visitNext} style="flex:1;height:48px;border-radius:14px;border:none;background:#2563eb;color:#ffffff;font-size:14px;font-weight:700;cursor:pointer">ถัดไป</button>`
+          : html`<button onClick=${this.submitVisit} style="flex:1;height:48px;border-radius:14px;border:none;background:#16a34a;color:#ffffff;font-size:14px;font-weight:700;cursor:pointer">บันทึกและส่ง</button>`}
+      </div>
+    `;
+  }
+
+  /* ================= render: assessments ================= */
+
+  renderAssessmentsHub(s, d) {
+    return html`
+      <div style="display:flex;flex-direction:column;gap:10px">
+        ${d.assessmentTypes.map(a => html`
+          <div onClick=${a.open} style="background:#ffffff;border-radius:16px;padding:14px;box-shadow:0 1px 3px rgba(15,23,42,0.06);border:1px solid #eef2f7;display:flex;align-items:center;gap:12px;cursor:pointer">
+            <div style="width:42px;height:42px;border-radius:12px;background:${a.bg};flex:none;display:flex;align-items:center;justify-content:center"><div style="width:16px;height:16px;border-radius:4px;background:${a.dot}"></div></div>
+            <div style="flex:1">
+              <div style="font-size:14px;font-weight:700;color:#0f172a">${a.title}</div>
+              <div style="font-size:12px;color:#64748b">${a.subtitle}</div>
+            </div>
+            <div style="font-size:18px;color:#cbd5e1">›</div>
+          </div>
+        `)}
+      </div>
+    `;
+  }
+
+  renderDepressionChain(s, d) {
+    return html`
+      <div style="display:flex;flex-direction:column;gap:14px">
+        <div style="font-size:13px;color:#64748b;background:#eff6ff;border-radius:12px;padding:10px 12px">ผู้ป่วย: <b>${d.selectedPatientFull.name}</b> · แบบประเมินภาวะซึมเศร้า</div>
+
+        <div style="background:#ffffff;border-radius:18px;padding:16px;box-shadow:0 1px 3px rgba(15,23,42,0.06);border:1px solid #eef2f7;display:flex;flex-direction:column;gap:12px">
+          <div style="font-size:14px;font-weight:700">2Q — คัดกรองเบื้องต้น</div>
+          ${d.twoQItems.map(q => html`
+            <div style="display:flex;flex-direction:column;gap:8px;padding-bottom:10px;border-bottom:1px solid #f1f5f9">
+              <div style="font-size:13.5px;color:#0f172a">${q.text}</div>
+              <div style="display:flex;gap:10px">
+                <button onClick=${q.setNo} style="flex:1;height:40px;border-radius:10px;border:1.5px solid ${q.noBorder};background:${q.noBg};color:${q.noColor};font-size:13px;font-weight:700;cursor:pointer">ไม่มี</button>
+                <button onClick=${q.setYes} style="flex:1;height:40px;border-radius:10px;border:1.5px solid ${q.yesBorder};background:${q.yesBg};color:${q.yesColor};font-size:13px;font-weight:700;cursor:pointer">มี</button>
+              </div>
+            </div>
+          `)}
+        </div>
+
+        ${d.twoQBothNo ? html`<div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:14px;padding:14px;font-size:13.5px;color:#166534;font-weight:600">ผลประเมิน: ไม่พบความเสี่ยงภาวะซึมเศร้า (ไม่ต้องประเมินต่อ)</div>` : null}
+
+        ${d.showNineQ ? html`
+          <div style="background:#ffffff;border-radius:18px;padding:16px;box-shadow:0 1px 3px rgba(15,23,42,0.06);border:1px solid #eef2f7;display:flex;flex-direction:column;gap:12px">
+            <div style="font-size:14px;font-weight:700">9Q — ประเมินความรุนแรง</div>
+            ${d.nineQItems.map(q => html`
+              <div style="display:flex;flex-direction:column;gap:8px;padding-bottom:10px;border-bottom:1px solid #f1f5f9">
+                <div style="font-size:13px;color:#0f172a">${q.n}. ${q.text}</div>
+                <div style="display:flex;gap:6px">
+                  ${q.options.map(opt => html`
+                    <button onClick=${opt.select} style="flex:1;height:38px;border-radius:9px;border:1.5px solid ${opt.border};background:${opt.bg};color:${opt.color};font-size:12px;font-weight:700;cursor:pointer">${opt.value}</button>
+                  `)}
+                </div>
+              </div>
+            `)}
+            <div style="font-size:13.5px;font-weight:700;color:#0f172a">คะแนนรวม 9Q: ${d.nineQTotal}</div>
+          </div>
+        ` : null}
+
+        ${d.nineQAlert ? html`<div style="background:#fef2f2;border:1px solid #fecaca;border-radius:14px;padding:14px;font-size:13.5px;color:#dc2626;font-weight:700">⚠ ข้อ 9 มีคะแนนมากกว่า 0 — ระบบได้แจ้งเตือน CM ทันที และต้องประเมิน 8Q ต่อ</div>` : null}
+
+        ${d.showEightQ ? html`
+          <div style="background:#ffffff;border-radius:18px;padding:16px;box-shadow:0 1px 3px rgba(15,23,42,0.06);border:1px solid #eef2f7;display:flex;flex-direction:column;gap:12px">
+            <div style="font-size:14px;font-weight:700">8Q — ประเมินความเสี่ยงฆ่าตัวตาย</div>
+            ${d.eightQItems.map(q => html`
+              <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 0;border-bottom:1px solid #f1f5f9">
+                <div style="font-size:13px;color:#0f172a;flex:1">${q.n}. ${q.text}</div>
+                <div style="display:flex;gap:6px">
+                  <button onClick=${q.setNo} style="width:56px;height:34px;border-radius:9px;border:1.5px solid ${q.noBorder};background:${q.noBg};color:${q.noColor};font-size:12px;font-weight:700;cursor:pointer">ไม่มี</button>
+                  <button onClick=${q.setYes} style="width:56px;height:34px;border-radius:9px;border:1.5px solid ${q.yesBorder};background:${q.yesBg};color:${q.yesColor};font-size:12px;font-weight:700;cursor:pointer">มี</button>
+                </div>
+              </div>
+            `)}
+            <div style="font-size:13.5px;font-weight:700;color:#0f172a">คะแนนรวม 8Q: ${d.eightQTotal} — ${d.eightQVerdict}</div>
+          </div>
+        ` : null}
+      </div>
+    `;
+  }
+
+  renderBarthel(s, d) {
+    return html`
+      <div style="display:flex;flex-direction:column;gap:14px">
+        <div style="font-size:13px;color:#64748b;background:#eff6ff;border-radius:12px;padding:10px 12px">ผู้ป่วย: <b>${d.selectedPatientFull.name}</b> · Barthel ADL Index</div>
+        <div style="background:#ffffff;border-radius:18px;padding:16px;box-shadow:0 1px 3px rgba(15,23,42,0.06);border:1px solid #eef2f7;display:flex;flex-direction:column;gap:12px">
+          ${d.barthelItems.map(item => html`
+            <div style="display:flex;flex-direction:column;gap:8px;padding-bottom:10px;border-bottom:1px solid #f1f5f9">
+              <div style="font-size:13.5px;font-weight:600;color:#0f172a">${item.label}</div>
+              <div style="display:flex;gap:6px;flex-wrap:wrap">
+                ${item.options.map(opt => html`
+                  <button onClick=${opt.select} style="height:36px;padding:0 12px;border-radius:9px;border:1.5px solid ${opt.border};background:${opt.bg};color:${opt.color};font-size:12px;font-weight:600;cursor:pointer">${opt.label}</button>
+                `)}
+              </div>
+            </div>
+          `)}
+          <div style="display:flex;justify-content:space-between;align-items:center;padding-top:4px">
+            <div style="font-size:14px;font-weight:700">คะแนนรวม: ${d.barthelTotal} / 20</div>
+            <div style="font-size:12.5px;font-weight:700;padding:6px 12px;border-radius:999px;background:${d.barthelGroupBg};color:${d.barthelGroupColor}">${d.barthelGroupLabel}</div>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  renderPressureUlcer(s, d) {
+    const wd = s.woundDetail;
+    return html`
+      <div style="display:flex;flex-direction:column;gap:14px">
+        <div style="font-size:13px;color:#64748b;background:#eff6ff;border-radius:12px;padding:10px 12px">ผู้ป่วย: <b>${d.selectedPatientFull.name}</b> · ประเมินความเสี่ยงแผลกดทับ</div>
+        <div style="background:#ffffff;border-radius:18px;padding:16px;box-shadow:0 1px 3px rgba(15,23,42,0.06);border:1px solid #eef2f7;display:flex;flex-direction:column;gap:12px">
+          <div style="font-size:14px;font-weight:700">พบแผลกดทับในการเยี่ยมนี้หรือไม่?</div>
+          <div style="display:flex;gap:10px">
+            <button onClick=${this.setWoundNo} style="flex:1;height:44px;border-radius:12px;border:1.5px solid ${s.hasWound===false?'#16a34a':'#e2e8f0'};background:${s.hasWound===false?'#f0fdf4':'#ffffff'};color:${s.hasWound===false?'#166534':'#64748b'};font-size:13.5px;font-weight:700;cursor:pointer">ไม่มี</button>
+            <button onClick=${this.setWoundYes} style="flex:1;height:44px;border-radius:12px;border:1.5px solid ${s.hasWound===true?'#dc2626':'#e2e8f0'};background:${s.hasWound===true?'#fef2f2':'#ffffff'};color:${s.hasWound===true?'#b91c1c':'#64748b'};font-size:13.5px;font-weight:700;cursor:pointer">มี</button>
+          </div>
+          ${s.hasWound ? html`
+            <div style="display:flex;flex-direction:column;gap:10px;background:#fef2f2;border-radius:14px;padding:12px">
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+                <input type="text" placeholder="ตำแหน่งแผล" value=${wd.location} onInput=${e => this.setWoundField('location', e.target.value)} style="height:42px;border-radius:10px;border:1px solid #fecaca;padding:0 10px;font-size:13.5px;outline:none;background:#ffffff"/>
+                <input type="text" placeholder="ขนาด (ซม.)" value=${wd.size} onInput=${e => this.setWoundField('size', e.target.value)} style="height:42px;border-radius:10px;border:1px solid #fecaca;padding:0 10px;font-size:13.5px;outline:none;background:#ffffff"/>
+              </div>
+            </div>
+          ` : null}
+          ${s.hasWound === false ? html`<div style="font-size:12.5px;color:#94a3b8">ไม่ต้องกรอกรายละเอียดแผลเพิ่มเติม</div>` : null}
+        </div>
+      </div>
+    `;
+  }
+
+  renderSimpleScale(s, d) {
+    return html`
+      <div style="display:flex;flex-direction:column;gap:14px">
+        <div style="font-size:13px;color:#64748b;background:#eff6ff;border-radius:12px;padding:10px 12px">ผู้ป่วย: <b>${d.selectedPatientFull.name}</b> · ${d.simpleScaleTitle}</div>
+        <div style="background:#ffffff;border-radius:18px;padding:16px;box-shadow:0 1px 3px rgba(15,23,42,0.06);border:1px solid #eef2f7;display:flex;flex-direction:column;gap:12px">
+          ${d.simpleScaleItems.map(q => html`
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 0;border-bottom:1px solid #f1f5f9">
+              <div style="font-size:13px;color:#0f172a;flex:1">${q.text}</div>
+              <div style="display:flex;gap:6px">
+                <button onClick=${q.setNo} style="width:56px;height:34px;border-radius:9px;border:1.5px solid ${q.noBorder};background:${q.noBg};color:${q.noColor};font-size:12px;font-weight:700;cursor:pointer">ไม่ใช่</button>
+                <button onClick=${q.setYes} style="width:56px;height:34px;border-radius:9px;border:1.5px solid ${q.yesBorder};background:${q.yesBg};color:${q.yesColor};font-size:12px;font-weight:700;cursor:pointer">ใช่</button>
+              </div>
+            </div>
+          `)}
+          <div style="font-size:13.5px;font-weight:700">คะแนนรวม: ${d.simpleScaleTotal} — ${d.simpleScaleVerdict}</div>
+        </div>
+      </div>
+    `;
+  }
+
+  /* ================= render: app shell ================= */
+
+  renderAppShell(s, d) {
+    const isVisit = s.screen === 'visit';
+    return html`
+      <div style="flex:1;display:flex;flex-direction:column;min-height:0">
+        ${this.renderHeader(s, d)}
+        ${s.toast ? html`<div style="flex:none;background:#dcfce7;color:#166534;font-size:12.5px;padding:8px 16px;text-align:center;font-weight:600">${s.toast}</div>` : null}
+
+        <div style="flex:1;overflow-y:auto;min-height:0;padding:16px 16px 96px 16px;display:flex;flex-direction:column;gap:16px">
+          ${s.screen === 'dashboard' ? this.renderDashboard(s, d) : null}
+          ${s.screen === 'patients' ? this.renderPatients(s, d) : null}
+          ${s.screen === 'patientDetail' ? this.renderPatientDetail(s, d) : null}
+          ${isVisit ? this.renderVisit(s, d) : null}
+          ${s.screen === 'assessments' ? this.renderAssessmentsHub(s, d) : null}
+          ${s.screen === 'assessmentDetail' && s.assessmentType === 'depression' ? this.renderDepressionChain(s, d) : null}
+          ${s.screen === 'assessmentDetail' && s.assessmentType === 'barthel' ? this.renderBarthel(s, d) : null}
+          ${s.screen === 'assessmentDetail' && s.assessmentType === 'pressureulcer' ? this.renderPressureUlcer(s, d) : null}
+          ${s.screen === 'assessmentDetail' && (s.assessmentType === 'fallrisk' || s.assessmentType === 'caregiverburden') ? this.renderSimpleScale(s, d) : null}
+        </div>
+
+        ${isVisit ? this.renderVisitStickyBar(s) : null}
+        ${this.renderBottomNav(s, d)}
+      </div>
+    `;
+  }
+
+  /* ================= root render ================= */
+
+  render(_, state) {
+    const s = state;
+    const inner = s.screen === 'login' ? this.renderLogin(s) : this.renderAppShell(s, this.computeDerived(s));
+    return html`
+      <div style="width:100%;height:100vh;display:flex;flex-direction:column;background:#f8fafc;font-family:'Noto Sans Thai',sans-serif;color:#0f172a;overflow:hidden;position:relative">
+        ${inner}
+      </div>
+    `;
+  }
+}
+
+render(html`<${App} />`, document.getElementById('root'));
+
+window.addEventListener('error', (e) => {
+  console.error('[LTC Smart Care]', e.message, e.filename, e.lineno);
+});
+</script>
