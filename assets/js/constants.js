@@ -76,22 +76,25 @@ export function carePlanStatusBadgeClass(status) {
 
 export const WOUND_STAGE_OPTIONS = ['1', '2', '3', '4'];
 
-/** นิยาม Barthel ADL Index 10 ข้อ — key/max ต้องตรงกับ BARTHEL_DEFS_ ใน Assessments.gs เป๊ะ */
+/**
+ * นิยาม Barthel ADL Index 10 ข้อ — key/max ต้องตรงกับ BARTHEL_DEFS_ ใน Assessments.gs เป๊ะ
+ * max ต่อข้อและคำบรรยายตัวเลือกยึดตามแบบฟอร์มมาตรฐาน (แบบบันทึกติดตามดูแลผู้ป่วยต่อเนื่องที่บ้าน รพ.สต.)
+ */
 export const BARTHEL_ITEMS = [
   { key: 'feeding', label: 'การรับประทานอาหาร', max: 2, options: [{ v: 0, l: 'ทำเองไม่ได้ ต้องป้อน' }, { v: 1, l: 'ช่วยเหลือบางส่วน' }, { v: 2, l: 'ทำเองได้' }] },
   { key: 'bathing', label: 'การอาบน้ำ', max: 1, options: [{ v: 0, l: 'ต้องช่วยเหลือ' }, { v: 1, l: 'ทำเองได้' }] },
-  { key: 'grooming', label: 'การแต่งตัว/ดูแลความสะอาดร่างกาย', max: 2, options: [{ v: 0, l: 'ทำเองไม่ได้' }, { v: 1, l: 'ต้องช่วยเหลือ' }, { v: 2, l: 'ทำเองได้' }] },
+  { key: 'grooming', label: 'การล้างหน้า หวีผม แปรงฟัน โกนหนวด', max: 1, options: [{ v: 0, l: 'ต้องการความช่วยเหลือ' }, { v: 1, l: 'ทำได้เอง (รวมถึงเตรียมอุปกรณ์ให้)' }] },
   { key: 'dressing', label: 'การสวมใส่เสื้อผ้า', max: 2, options: [{ v: 0, l: 'ทำเองไม่ได้' }, { v: 1, l: 'ช่วยเหลือบางส่วน' }, { v: 2, l: 'ทำเองได้' }] },
   { key: 'bowel', label: 'การกลั้นการถ่ายอุจจาระ', max: 2, options: [{ v: 0, l: 'กลั้นไม่ได้' }, { v: 1, l: 'เป็นบางครั้ง' }, { v: 2, l: 'กลั้นได้ปกติ' }] },
   { key: 'bladder', label: 'การกลั้นปัสสาวะ', max: 2, options: [{ v: 0, l: 'กลั้นไม่ได้' }, { v: 1, l: 'เป็นบางครั้ง' }, { v: 2, l: 'กลั้นได้ปกติ' }] },
-  { key: 'toilet', label: 'การใช้ห้องน้ำ', max: 3, options: [{ v: 0, l: 'ทำเองไม่ได้' }, { v: 1, l: 'ช่วยเหลือมาก' }, { v: 2, l: 'ช่วยเหลือเล็กน้อย' }, { v: 3, l: 'ทำเองได้' }] },
+  { key: 'toilet', label: 'การใช้ห้องน้ำ', max: 2, options: [{ v: 0, l: 'ช่วยตัวเองไม่ได้' }, { v: 1, l: 'ทำเองได้บ้าง ต้องช่วยบางสิ่ง' }, { v: 2, l: 'ช่วยเหลือตัวเองได้ดี' }] },
   { key: 'transfer', label: 'การเคลื่อนย้ายตัว (เตียง-เก้าอี้)', max: 3, options: [{ v: 0, l: 'ทำเองไม่ได้' }, { v: 1, l: 'ช่วยเหลือมาก' }, { v: 2, l: 'ช่วยเหลือเล็กน้อย' }, { v: 3, l: 'ทำเองได้' }] },
-  { key: 'mobility', label: 'การเดินหรือเคลื่อนที่', max: 2, options: [{ v: 0, l: 'เดินไม่ได้' }, { v: 1, l: 'ต้องช่วยเหลือ/ใช้อุปกรณ์' }, { v: 2, l: 'เดินได้เอง' }] },
-  { key: 'stairs', label: 'การขึ้นลงบันได', max: 1, options: [{ v: 0, l: 'ทำเองไม่ได้' }, { v: 1, l: 'ทำเองได้' }] }
+  { key: 'mobility', label: 'การเคลื่อนที่ภายในห้องหรือบ้าน', max: 3, options: [{ v: 0, l: 'เคลื่อนที่ไปไหนไม่ได้' }, { v: 1, l: 'ใช้รถเข็นได้เอง' }, { v: 2, l: 'เดินโดยมีคนช่วยพยุง' }, { v: 3, l: 'เดินหรือเคลื่อนที่เองได้' }] },
+  { key: 'stairs', label: 'การขึ้นลงบันได', max: 2, options: [{ v: 0, l: 'ไม่สามารถทำได้' }, { v: 1, l: 'ต้องให้คนช่วย' }, { v: 2, l: 'ขึ้นลงเองได้' }] }
 ];
 
-/** ลำดับ/ป้ายชื่อ 8 โดเมนของ INHOMESSS — ต้องตรงกับ INHOMESSS_DOMAINS_ ใน Assessments.gs เป๊ะ */
-export const INHOMESSS_DOMAIN_ORDER = ['immobility', 'nutrition', 'homeEnvironment', 'otherPeople', 'medications', 'examination', 'safety', 'socialSupport'];
+/** ลำดับ/ป้ายชื่อ 9 มิติของ INHOMESSS — ต้องตรงกับ INHOMESSS_DOMAINS_ ใน Assessments.gs เป๊ะ (S สามตัว = Safety/Spiritual/Service) */
+export const INHOMESSS_DOMAIN_ORDER = ['immobility', 'nutrition', 'homeEnvironment', 'otherPeople', 'medications', 'examination', 'safety', 'spiritualHealth', 'service'];
 export const INHOMESSS_DOMAIN_LABELS = {
   immobility: 'Immobility — ข้อจำกัดการเคลื่อนไหว',
   nutrition: 'Nutrition — โภชนาการ',
@@ -100,7 +103,8 @@ export const INHOMESSS_DOMAIN_LABELS = {
   medications: 'Medications — การใช้ยา',
   examination: 'Examination — การตรวจร่างกาย',
   safety: 'Safety — ความปลอดภัย',
-  socialSupport: 'Social support — การสนับสนุนทางสังคม'
+  spiritualHealth: 'Spiritual health — สุขภาวะทางจิตวิญญาณ',
+  service: 'Service — แหล่งบริการสุขภาพใกล้บ้าน'
 };
 
 /** ข้อความแบบประเมิน 9Q/8Q/ความเสี่ยงหกล้ม/ภาระผู้ดูแล — ต้องมีจำนวนข้อตรงกับ backend เป๊ะ (9/8/5/5 ข้อตามลำดับ) */

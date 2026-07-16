@@ -52,7 +52,7 @@ export const ASSESSMENT_DEFS = {
   },
   inhomesss: {
     kind: 'inhomesss', action: 'assessments.saveInhomesss',
-    title: 'INHOMESSS', subtitle: 'ประเมินสิ่งแวดล้อมและบริบทที่บ้าน 8 มิติ'
+    title: 'INHOMESSS', subtitle: 'ประเมินสิ่งแวดล้อมและบริบทที่บ้าน 9 มิติ'
   }
 };
 
@@ -235,7 +235,7 @@ const barthelRenderer = {
   }
 };
 
-/** INHOMESSS — 8 มิติ แต่ละมิติมี hasIssue (บังคับ) + note (ไม่บังคับ) ตาม computeInhomesssScore_ */
+/** INHOMESSS — 9 มิติ แต่ละมิติมี hasIssue (บังคับ) + note (ไม่บังคับ) ตาม computeInhomesssScore_ */
 const inhomesssRenderer = {
   render(container, state, def, rerender) {
     const issues = INHOMESSS_DOMAIN_ORDER.filter((d) => (state.answers[d] || {}).hasIssue === true).length;
@@ -244,7 +244,7 @@ const inhomesssRenderer = {
     container.innerHTML = `
       ${livePreview(`ตอบแล้ว ${answered}/${INHOMESSS_DOMAIN_ORDER.length} มิติ · พบปัญหา ${issues} มิติ · ${verdict}`)}
       ${card(`
-        ${sectionTitle('INHOMESSS — 8 มิติ')}
+        ${sectionTitle('INHOMESSS — 9 มิติ')}
         <div class="space-y-4">
           ${INHOMESSS_DOMAIN_ORDER.map((domain) => {
             const entry = state.answers[domain] || {};
