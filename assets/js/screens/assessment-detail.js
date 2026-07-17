@@ -41,7 +41,7 @@ export async function renderAssessmentDetail(content, params) {
     return;
   }
 
-  content.innerHTML = `<div class="px-4 py-5 max-w-xl"><div id="ad-body"></div></div>`;
+  content.innerHTML = `<div class="px-4 py-5 max-w-xl mx-auto"><div id="ad-body"></div></div>`;
   const bodyEl = content.querySelector('#ad-body');
   renderCardSkeleton(bodyEl);
 

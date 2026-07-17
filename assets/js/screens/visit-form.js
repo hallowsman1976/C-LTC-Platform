@@ -113,26 +113,30 @@ function mountWizard(content, patient, state) {
 
   content.innerHTML = `
     <div class="fixed inset-0 z-[35] bg-slate-50 flex flex-col">
-      <div class="sticky top-0 bg-white border-b border-slate-200 px-4 py-3 flex items-center justify-between gap-3">
-        <button id="vf-exit-btn" type="button" class="text-slate-400 text-lg leading-none">✕</button>
-        <div class="text-center min-w-0">
-          <p id="vf-step-counter" class="text-xs text-slate-400">ขั้นตอน ${state.currentStep}/${TOTAL_STEPS} · ${escapeHtml(patient.name)} (HN ${escapeHtml(patient.hn)})</p>
-          <p id="vf-step-title" class="text-sm font-semibold text-slate-800 truncate">${escapeHtml(STEP_TITLES[state.currentStep - 1])}</p>
+      <div class="sticky top-0 bg-white border-b border-slate-200">
+        <div class="px-4 py-3 flex items-center justify-between gap-3 md:max-w-xl md:mx-auto">
+          <button id="vf-exit-btn" type="button" class="text-slate-400 text-lg leading-none">✕</button>
+          <div class="text-center min-w-0">
+            <p id="vf-step-counter" class="text-xs text-slate-400">ขั้นตอน ${state.currentStep}/${TOTAL_STEPS} · ${escapeHtml(patient.name)} (HN ${escapeHtml(patient.hn)})</p>
+            <p id="vf-step-title" class="text-sm font-semibold text-slate-800 truncate">${escapeHtml(STEP_TITLES[state.currentStep - 1])}</p>
+          </div>
+          <div class="w-5"></div>
         </div>
-        <div class="w-5"></div>
       </div>
       <div class="h-1 bg-slate-100">
         <div id="vf-progress-bar" class="h-1 bg-sky-600 transition-all" style="width:${(state.currentStep / TOTAL_STEPS) * 100}%"></div>
       </div>
 
-      <div id="vf-step-content" class="flex-1 overflow-y-auto px-4 py-4"></div>
+      <div id="vf-step-content" class="flex-1 overflow-y-auto px-4 py-4 md:max-w-xl md:mx-auto md:w-full"></div>
 
-      <p id="vf-step-error" class="hidden text-xs text-rose-600 bg-rose-50 px-4 py-2"></p>
+      <p id="vf-step-error" class="hidden text-xs text-rose-600 bg-rose-50 px-4 py-2 md:max-w-xl md:mx-auto md:w-full"></p>
 
-      <div class="sticky bottom-0 bg-white border-t border-slate-200 px-4 py-3 flex gap-2">
-        <button id="vf-prev-btn" type="button" class="px-4 py-2.5 rounded-xl bg-slate-100 text-slate-600 text-sm font-medium">ก่อนหน้า</button>
-        <button id="vf-save-draft-btn" type="button" class="flex-1 py-2.5 rounded-xl bg-slate-100 text-slate-600 text-sm font-medium">บันทึกร่างไว้ก่อน</button>
-        <button id="vf-next-btn" type="button" class="flex-1 py-2.5 rounded-xl bg-sky-600 text-white text-sm font-medium">ถัดไป</button>
+      <div class="sticky bottom-0 bg-white border-t border-slate-200">
+        <div class="px-4 py-3 flex gap-2 md:max-w-xl md:mx-auto">
+          <button id="vf-prev-btn" type="button" class="px-4 py-2.5 rounded-xl bg-slate-100 text-slate-600 text-sm font-medium">ก่อนหน้า</button>
+          <button id="vf-save-draft-btn" type="button" class="flex-1 py-2.5 rounded-xl bg-slate-100 text-slate-600 text-sm font-medium">บันทึกร่างไว้ก่อน</button>
+          <button id="vf-next-btn" type="button" class="flex-1 py-2.5 rounded-xl bg-sky-600 text-white text-sm font-medium">ถัดไป</button>
+        </div>
       </div>
     </div>
   `;

@@ -18,7 +18,7 @@ let mapInstance = null;
 /** @param {HTMLElement} content */
 export async function renderMap(content) {
   content.innerHTML = `
-    <div class="px-4 py-5 max-w-4xl">
+    <div class="px-4 py-5 max-w-4xl mx-auto">
       <h1 class="text-lg font-bold text-slate-800 mb-1">แผนที่ผู้ป่วย</h1>
       <p class="text-xs text-slate-400 mb-4">ตำแหน่งจากการเยี่ยมบ้านครั้งล่าสุดของผู้ป่วยแต่ละราย</p>
       <div id="map-container" class="rounded-2xl overflow-hidden shadow-sm mb-4" style="height:420px"></div>

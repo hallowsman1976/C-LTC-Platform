@@ -32,7 +32,7 @@ export async function renderAdminAssignments(content) {
   const state = { patients: [], truncated: false, filter: 'all', search: '' };
 
   content.innerHTML = `
-    <div class="px-4 py-5 max-w-3xl">
+    <div class="px-4 py-5 max-w-3xl mx-auto">
       <a href="#/admin" class="text-sm text-sky-600 mb-3 inline-block">← กลับไปเมนูผู้ดูแลระบบ</a>
       <h1 class="text-lg font-bold text-slate-800 mb-1">มอบหมายทีมดูแล</h1>
       <p class="text-xs text-slate-400 mb-4">ดูภาพรวมว่าผู้ป่วยรายใดยังไม่มีผู้รับผิดชอบ และมอบหมายได้จากหน้านี้เลย</p>

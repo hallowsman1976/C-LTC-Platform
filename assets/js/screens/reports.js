@@ -16,7 +16,7 @@ export async function renderReports(content) {
   let currentItems = [];
 
   content.innerHTML = `
-    <div class="px-4 py-5 max-w-4xl">
+    <div class="px-4 py-5 max-w-4xl mx-auto">
       <div class="flex items-center justify-between mb-4 no-print">
         <h1 class="text-lg font-bold text-slate-800">รายงานผู้ป่วย</h1>
         <div class="flex gap-2">

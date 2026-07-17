@@ -22,7 +22,7 @@ export async function renderDashboard(content) {
   const scopeLabel = user && (user.role === 'CG' || user.role === 'CM') ? 'ผู้ป่วยของฉัน' : 'ผู้ป่วยทั้งหมด';
 
   content.innerHTML = `
-    <div class="px-4 py-5 max-w-4xl">
+    <div class="px-4 py-5 max-w-4xl mx-auto">
       <div class="relative rounded-2xl overflow-hidden mb-4 shadow-sm">
         <img src="assets/illustrations/dashboard-hero.svg" alt="" class="w-full h-28 md:h-32 object-cover" />
         <div class="absolute inset-0 flex flex-col justify-center px-5 max-w-[55%]">

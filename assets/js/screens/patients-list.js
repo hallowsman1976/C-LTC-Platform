@@ -18,7 +18,7 @@ export async function renderPatientsList(content) {
   let searchDebounceTimer = null;
 
   content.innerHTML = `
-    <div class="px-4 py-5 max-w-3xl">
+    <div class="px-4 py-5 max-w-3xl mx-auto">
       <div class="flex items-center justify-between mb-4">
         <h1 class="text-lg font-bold text-slate-800">ผู้ป่วย</h1>
         ${canCreate ? '<a href="#/patients/new" class="px-3 py-2 rounded-xl bg-sky-600 text-white text-sm font-medium">+ เพิ่มผู้ป่วย</a>' : ''}

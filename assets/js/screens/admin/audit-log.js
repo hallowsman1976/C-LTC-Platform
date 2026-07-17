@@ -21,7 +21,7 @@ export async function renderAdminAuditLog(content) {
   const state = { userId: '', action: '', targetType: '', dateFrom: '', dateTo: '', page: 1 };
 
   content.innerHTML = `
-    <div class="px-4 py-5 max-w-3xl">
+    <div class="px-4 py-5 max-w-3xl mx-auto">
       <a href="#/admin" class="text-sm text-sky-600 mb-3 inline-block">← กลับไปเมนูผู้ดูแลระบบ</a>
       <h1 class="text-lg font-bold text-slate-800 mb-1">Audit Log</h1>
       <p class="text-xs text-slate-400 mb-4">ประวัติการกระทำทั้งหมดในระบบ เรียงใหม่สุดก่อน</p>

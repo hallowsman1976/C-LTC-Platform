@@ -26,7 +26,7 @@ export async function renderPatientForm(content, params) {
   const isEdit = !!(params && params.id);
   const currentUser = getCurrentUser();
 
-  content.innerHTML = `<div class="px-4 py-5 max-w-xl"><div id="pf-body"></div></div>`;
+  content.innerHTML = `<div class="px-4 py-5 max-w-xl mx-auto"><div id="pf-body"></div></div>`;
   const bodyEl = content.querySelector('#pf-body');
   renderCardSkeleton(bodyEl);
 

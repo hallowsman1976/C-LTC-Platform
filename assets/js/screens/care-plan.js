@@ -19,7 +19,7 @@ export async function renderCarePlan(content, params) {
   const canEditPlans = hasRole('ADMIN', 'CM', 'CG');
 
   content.innerHTML = `
-    <div class="px-4 py-5 max-w-2xl">
+    <div class="px-4 py-5 max-w-2xl mx-auto">
       <a href="#/patients/${encodeURIComponent(patientId)}" class="text-sm text-sky-600 mb-3 inline-block">← กลับไปรายละเอียดผู้ป่วย</a>
       <div id="cp-patient-header"></div>
       <div class="flex items-center justify-between mt-4 mb-3">

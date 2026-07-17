@@ -32,7 +32,7 @@ export async function renderAdminUsers(content) {
   let searchDebounceTimer = null;
 
   content.innerHTML = `
-    <div class="px-4 py-5 max-w-3xl">
+    <div class="px-4 py-5 max-w-3xl mx-auto">
       <a href="#/admin" class="text-sm text-sky-600 mb-3 inline-block">← กลับไปเมนูผู้ดูแลระบบ</a>
       <div class="flex items-center justify-between mb-4">
         <h1 class="text-lg font-bold text-slate-800">จัดการผู้ใช้</h1>

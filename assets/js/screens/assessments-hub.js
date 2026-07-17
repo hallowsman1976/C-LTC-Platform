@@ -29,7 +29,7 @@ export async function renderAssessmentsHub(content) {
   let searchDebounceTimer = null;
 
   content.innerHTML = `
-    <div class="px-4 py-5 max-w-3xl">
+    <div class="px-4 py-5 max-w-3xl mx-auto">
       <h1 class="text-lg font-bold text-slate-800 mb-1">แบบประเมิน</h1>
       <p class="text-xs text-slate-400 mb-4">เลือกผู้ป่วยที่ต้องการประเมิน แล้วจึงเลือกชนิดแบบประเมิน</p>
 
@@ -102,7 +102,7 @@ export async function renderPatientAssessments(content, params) {
   const canAssess = hasRole('ADMIN', 'CM', 'CG');
   const historyState = { page: 1 };
 
-  content.innerHTML = `<div class="px-4 py-5 max-w-3xl"><div id="pa-body"></div></div>`;
+  content.innerHTML = `<div class="px-4 py-5 max-w-3xl mx-auto"><div id="pa-body"></div></div>`;
   const bodyEl = content.querySelector('#pa-body');
   renderCardSkeleton(bodyEl);
 

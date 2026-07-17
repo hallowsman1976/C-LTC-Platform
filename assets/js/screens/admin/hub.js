@@ -19,7 +19,7 @@ const ADMIN_SECTIONS = [
 /** @param {HTMLElement} content */
 export async function renderAdminHub(content) {
   content.innerHTML = `
-    <div class="px-4 py-5 max-w-3xl">
+    <div class="px-4 py-5 max-w-3xl mx-auto">
       <h1 class="text-lg font-bold text-slate-800 mb-1">ผู้ดูแลระบบ</h1>
       <p class="text-xs text-slate-400 mb-4">เมนูสำหรับ ADMIN เท่านั้น</p>
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">

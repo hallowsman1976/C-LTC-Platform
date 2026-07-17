@@ -17,7 +17,7 @@ export async function renderPatientDetail(content, params) {
   const patientId = params.id;
 
   content.innerHTML = `
-    <div class="px-4 py-5 max-w-2xl">
+    <div class="px-4 py-5 max-w-2xl mx-auto">
       <a href="#/patients" class="text-sm text-sky-600 mb-3 inline-block">← กลับไปรายชื่อผู้ป่วย</a>
       <div id="pd-header"></div>
       <div id="pd-actions" class="flex flex-wrap gap-2 my-4"></div>

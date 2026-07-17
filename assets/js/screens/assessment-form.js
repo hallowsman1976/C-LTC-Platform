@@ -78,7 +78,7 @@ export async function renderAssessmentForm(content, params) {
     return;
   }
 
-  content.innerHTML = `<div class="px-4 py-5 max-w-xl"><div id="af-body"></div></div>`;
+  content.innerHTML = `<div class="px-4 py-5 max-w-xl mx-auto"><div id="af-body"></div></div>`;
   const bodyEl = content.querySelector('#af-body');
   renderCardSkeleton(bodyEl);
 

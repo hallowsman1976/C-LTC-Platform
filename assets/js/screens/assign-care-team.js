@@ -21,7 +21,7 @@ export async function renderAssignCareTeam(content, params) {
   const isAdmin = hasRole('ADMIN');
 
   content.innerHTML = `
-    <div class="px-4 py-5 max-w-xl">
+    <div class="px-4 py-5 max-w-xl mx-auto">
       <a href="#/patients/${encodeURIComponent(patientId)}" class="text-sm text-sky-600 mb-3 inline-block">← กลับไปรายละเอียดผู้ป่วย</a>
       <h1 class="text-lg font-bold text-slate-800 mb-4">มอบหมายทีมดูแล</h1>
       <div id="ac-body"></div>
