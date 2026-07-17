@@ -57,6 +57,7 @@ export async function renderAssignCareTeam(content, params) {
         ` : `
           <input id="ac-cg" type="text" value="${escapeHtml(patient.primaryCgUserId || '')}" placeholder="เช่น U-a1b2c3"
             class="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500" />
+          ${patient.primaryCgUserId ? `<p class="text-xs text-slate-500 mt-1">ปัจจุบัน: ${escapeHtml(patient.primaryCgName || patient.primaryCgUserId)}</p>` : ''}
           <p class="text-xs text-slate-400 mt-1">ไม่มีสิทธิ์เรียกดูรายชื่อ CG ทั้งหมด กรุณากรอกรหัสผู้ใช้ CG โดยตรง (เว้นว่างเพื่อยกเลิกการมอบหมาย)</p>
         `}
       </div>
@@ -69,7 +70,7 @@ export async function renderAssignCareTeam(content, params) {
             ${cmOptions.map((u) => `<option value="${escapeHtml(u.userId)}" ${patient.responsibleCmUserId === u.userId ? 'selected' : ''}>${escapeHtml(u.name)}</option>`).join('')}
           </select>
         ` : `
-          <input type="text" value="${escapeHtml(patient.responsibleCmUserId || 'ยังไม่มอบหมาย')}" disabled
+          <input type="text" value="${escapeHtml(patient.responsibleCmUserId ? (patient.responsibleCmName || patient.responsibleCmUserId) : 'ยังไม่มอบหมาย')}" disabled
             class="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm bg-slate-50 text-slate-400" />
           <p class="text-xs text-slate-400 mt-1">การโอนผู้ป่วยไปยัง Case Manager คนอื่นต้องดำเนินการโดยผู้ดูแลระบบ (ADMIN) เท่านั้น</p>
         `}

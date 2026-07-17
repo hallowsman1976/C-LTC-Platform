@@ -171,7 +171,7 @@ async function renderRoute() {
 async function renderSettings(content) {
   const user = getCurrentUser();
   content.innerHTML = `
-    <div class="px-4 py-5 max-w-md">
+    <div class="px-4 py-5 max-w-md mx-auto">
       <h1 class="text-lg font-bold text-slate-800 mb-4">ตั้งค่า</h1>
       <div class="bg-white rounded-2xl shadow-sm p-4 mb-3 space-y-2 text-sm">
         <div class="flex justify-between"><span class="text-slate-400">ชื่อ</span><span class="text-slate-700 font-medium">${escapeHtml(user ? user.name : '-')}</span></div>
