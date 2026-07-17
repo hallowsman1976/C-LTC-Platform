@@ -132,38 +132,103 @@ function renderEditableField(domain, field, value) {
     </div>`;
 }
 
+/** แถบความคืบหน้าของ step ย่อยรายมิติ (ไม่ใช่ step ใหญ่ของฟอร์มเยี่ยมบ้าน — อันนั้นมีแถบของตัวเองใน visit-form.js) */
+function renderDomainStepProgress(stepIndex, total) {
+  const pct = ((stepIndex + 1) / total) * 100;
+  return `
+    <div class="mb-3">
+      <p class="text-xs text-slate-400 mb-1">มิติที่ ${stepIndex + 1}/${total}</p>
+      <div class="h-1 bg-slate-100 rounded-full overflow-hidden">
+        <div class="h-1 bg-sky-600 transition-all" style="width:${pct}%"></div>
+      </div>
+    </div>
+  `;
+}
+
 /**
- * เรนเดอร์การ์ดทั้ง 9 มิติ (โหมดกรอก) — ไม่รวมแถบสรุปธงความเสี่ยง (ผู้เรียกจัดการเองแยกต่างหาก เพราะ
- * แต่ละหน้าจอมีสไตล์แถบสรุปของตัวเอง เช่น assessment-form.js มี livePreview() ของมันอยู่แล้ว)
+ * เรนเดอร์การ์ดของ "มิติเดียว" ตาม stepIndex พร้อมแถบความคืบหน้า + ปุ่มก่อนหน้า/ถัดไปมิติ (โหมดกรอกแบบ step)
+ * ไม่รวมแถบสรุปธงความเสี่ยง (ผู้เรียกจัดการเองแยกต่างหาก เพราะแต่ละหน้าจอมีสไตล์แถบสรุปของตัวเอง เช่น
+ * assessment-form.js มี livePreview() ของมันอยู่แล้ว)
+ * ไม่มีข้อบังคับต้องกรอกครบก่อนกดถัดไป — INHOMESSS เป็นเอกสารบันทึกอิสระ ไม่ใช่เครื่องมือให้คะแนน (ดูหัวไฟล์)
  * @param {Object} answers { domain: {...} } ค่าปัจจุบันของทุกมิติ
+ * @param {number} stepIndex ลำดับมิติที่กำลังแสดง (0-based, อิง INHOMESSS_DOMAIN_ORDER)
  * @return {string}
  */
-export function renderInhomesssSection(answers) {
+export function renderInhomesssStep(answers, stepIndex) {
   answers = answers || {};
-  return INHOMESSS_DOMAIN_ORDER.map((domain) => {
-    const domainAnswers = answers[domain] || {};
-    return card(`
+  const total = INHOMESSS_DOMAIN_ORDER.length;
+  const domain = INHOMESSS_DOMAIN_ORDER[stepIndex];
+  const domainAnswers = answers[domain] || {};
+  return `
+    ${renderDomainStepProgress(stepIndex, total)}
+    ${card(`
       ${sectionTitle(INHOMESSS_DOMAIN_LABELS[domain])}
       <div class="space-y-3">
         ${visibleFields(domain, domainAnswers).map((field) => renderEditableField(domain, field, domainAnswers[field.key])).join('')}
       </div>
-    `);
-  }).join('');
+    `)}
+    <div class="flex gap-2 mt-3">
+      <button type="button" data-ih-prev class="flex-1 py-2.5 rounded-xl bg-slate-100 text-slate-600 text-sm font-medium disabled:opacity-40" ${stepIndex === 0 ? 'disabled' : ''}>← มิติก่อนหน้า</button>
+      <button type="button" data-ih-next class="flex-1 py-2.5 rounded-xl bg-sky-600 text-white text-sm font-medium disabled:opacity-40" ${stepIndex === total - 1 ? 'disabled' : ''}>มิติถัดไป →</button>
+    </div>
+  `;
 }
 
 /**
- * ผูก event ให้ทุกฟิลด์ที่เรนเดอร์จาก renderInhomesssSection — ต้องเรียกทันทีหลัง set container.innerHTML
- * ด้วยค่า answers ชุดเดียวกัน (render/wire อ่าน showWhen จาก answers ตัวเดียวกัน ถ้าค่าเปลี่ยนระหว่างสองขั้นตอน
- * รายการฟิลด์ที่ wire จะไม่ตรงกับที่ render จริง)
+ * ผูก event ให้ฟิลด์ของมิติเดียวที่เรนเดอร์จาก renderInhomesssStep (stepIndex เดียวกัน) — ต้องเรียกทันทีหลัง
+ * set container.innerHTML ด้วยค่า answers/stepIndex ชุดเดียวกัน (render/wire อ่าน showWhen จาก answers ตัวเดียวกัน
+ * ถ้าค่าเปลี่ยนระหว่างสองขั้นตอน รายการฟิลด์ที่ wire จะไม่ตรงกับที่ render จริง)
  *
  * @param {HTMLElement} container
  * @param {Object} answers ค่าปัจจุบันของทุกมิติ (อ้างอิงเดียวกับที่ใช้ตอน render)
- * @param {{onChange: (domain:string, patch:Object, opts:{rerender:boolean}) => void}} handlers
+ * @param {number} stepIndex ลำดับมิติที่กำลังแสดง — ต้องตรงกับที่ใช้ตอน renderInhomesssStep
+ * @param {{onChange: (domain:string, patch:Object, opts:{rerender:boolean}) => void, onNavigate: (nextStepIndex:number) => void}} handlers
  *   onChange ต้อง merge patch เข้ากับ answers[domain] เอง (แต่ละหน้าจอมีกลไก state ของตัวเอง — ctx.setDeepValue
  *   ของฟอร์มเยี่ยมบ้าน vs การ mutate state.answers ตรง ๆ ของฟอร์มเดี่ยว) แล้ว rerender เองถ้า opts.rerender
  *   เป็น true (ปุ่มเลือกต้อง rerender ให้เห็นสถานะใหม่ + เผื่อเปิด/ปิดฟิลด์ตามเงื่อนไข ส่วนฟิลด์ข้อความธรรมดา
- *   ไม่ rerender กันเคอร์เซอร์กระโดด — ตามธรรมเนียมเดียวกับ visit-form-steps.js)
+ *   ไม่ rerender กันเคอร์เซอร์กระโดด — ตามธรรมเนียมเดียวกับ visit-form-steps.js) onNavigate เปลี่ยน stepIndex
+ *   แล้ว rerender เอง (ผู้เรียกเก็บ stepIndex ไว้ใน state ของตัวเอง คนละที่กับ answers)
  */
+export function wireInhomesssStep(container, answers, stepIndex, { onChange, onNavigate }) {
+  answers = answers || {};
+  const total = INHOMESSS_DOMAIN_ORDER.length;
+  const domain = INHOMESSS_DOMAIN_ORDER[stepIndex];
+  // ใช้ snapshot นี้แค่ตัดสินใจว่าฟิลด์ไหน "visible" ตอน wire (ต้องตรงกับที่ render ไปแล้ว) — ห้ามใช้ค่านี้
+  // ตอนคำนวณ patch ตอนคลิกจริง เพราะฟิลด์ข้อความธรรมดา (text/textarea) แก้ค่าโดยไม่ rerender ทำให้ snapshot
+  // นี้ล้าสมัยได้ทันทีที่พิมพ์อะไรลงไปหลัง wire ครั้งล่าสุด — ถ้า withHiddenFieldsCleared เผลอใช้ snapshot
+  // เก่าไปเทียบ จะไม่เห็นค่าที่เพิ่งพิมพ์ จึงไม่ล้างค่านั้นให้ตอนฟิลด์ถูกซ่อนในคลิกถัดไป (ค่าพิมพ์ค้างหลุดไปกับ payload)
+  const domainAnswersAtWireTime = answers[domain] || {};
+  const emit = (patch) => {
+    const current = answers[domain] || {};   // อ่านค่าปัจจุบันจริง ๆ ตอนคลิก ไม่ใช่ snapshot ตอน wire
+    onChange(domain, withHiddenFieldsCleared(domain, current, patch), { rerender: true });
+  };
+
+  visibleFields(domain, domainAnswersAtWireTime).forEach((field) => {
+    const name = fieldName(domain, field.key);
+    if (field.kind === 'single') {
+      wireSingleChoice(container, name, (value) => emit({ [field.key]: value }));
+    } else if (field.kind === 'multi') {
+      wireChips(container, name, (value) => {
+        const current = (answers[domain] || {})[field.key] || [];
+        emit({ [field.key]: toggleArrayValue(current, value) });
+      });
+    } else if (field.kind === 'boolean') {
+      wireYesNo(container, name, (value) => emit({ [field.key]: value }));
+    } else if (field.kind === 'textarea') {
+      const el = container.querySelector(`[data-ih-textarea="${cssId(name)}"]`);
+      if (el) el.addEventListener('input', (e) => onChange(domain, { [field.key]: e.target.value }, { rerender: false }));
+    } else {
+      const el = container.querySelector(`[data-ih-text="${cssId(name)}"]`);
+      if (el) el.addEventListener('input', (e) => onChange(domain, { [field.key]: e.target.value }, { rerender: false }));
+    }
+  });
+
+  const prevBtn = container.querySelector('[data-ih-prev]');
+  if (prevBtn) prevBtn.addEventListener('click', () => { if (stepIndex > 0) onNavigate(stepIndex - 1); });
+  const nextBtn = container.querySelector('[data-ih-next]');
+  if (nextBtn) nextBtn.addEventListener('click', () => { if (stepIndex < total - 1) onNavigate(stepIndex + 1); });
+}
+
 /**
  * ล้างค่าฟิลด์ตามเงื่อนไข (showWhen) ที่กำลังจะถูกซ่อนหลัง patch นี้ — ป้องกันค่าค้าง เช่น พิมพ์ "ปริมาณต่อวัน"
  * ไว้ตอน alcohol=ดื่ม แล้วเปลี่ยนใจเป็นไม่ดื่ม ค่าที่พิมพ์ไว้ต้องหายไปด้วย ไม่ใช่แค่ซ่อนจาก UI เฉย ๆ เพราะไม่งั้น
@@ -185,41 +250,6 @@ function withHiddenFieldsCleared(domain, domainAnswers, patch) {
     }
   });
   return { ...patch, ...cleared };
-}
-
-export function wireInhomesssSection(container, answers, { onChange }) {
-  answers = answers || {};
-  INHOMESSS_DOMAIN_ORDER.forEach((domain) => {
-    // ใช้ snapshot นี้แค่ตัดสินใจว่าฟิลด์ไหน "visible" ตอน wire (ต้องตรงกับที่ render ไปแล้ว) — ห้ามใช้ค่านี้
-    // ตอนคำนวณ patch ตอนคลิกจริง เพราะฟิลด์ข้อความธรรมดา (text/textarea) แก้ค่าโดยไม่ rerender ทำให้ snapshot
-    // นี้ล้าสมัยได้ทันทีที่พิมพ์อะไรลงไปหลัง wire ครั้งล่าสุด — ถ้า withHiddenFieldsCleared เผลอใช้ snapshot
-    // เก่าไปเทียบ จะไม่เห็นค่าที่เพิ่งพิมพ์ จึงไม่ล้างค่านั้นให้ตอนฟิลด์ถูกซ่อนในคลิกถัดไป (ค่าพิมพ์ค้างหลุดไปกับ payload)
-    const domainAnswersAtWireTime = answers[domain] || {};
-    const emit = (patch) => {
-      const current = answers[domain] || {};   // อ่านค่าปัจจุบันจริง ๆ ตอนคลิก ไม่ใช่ snapshot ตอน wire
-      onChange(domain, withHiddenFieldsCleared(domain, current, patch), { rerender: true });
-    };
-
-    visibleFields(domain, domainAnswersAtWireTime).forEach((field) => {
-      const name = fieldName(domain, field.key);
-      if (field.kind === 'single') {
-        wireSingleChoice(container, name, (value) => emit({ [field.key]: value }));
-      } else if (field.kind === 'multi') {
-        wireChips(container, name, (value) => {
-          const current = (answers[domain] || {})[field.key] || [];
-          emit({ [field.key]: toggleArrayValue(current, value) });
-        });
-      } else if (field.kind === 'boolean') {
-        wireYesNo(container, name, (value) => emit({ [field.key]: value }));
-      } else if (field.kind === 'textarea') {
-        const el = container.querySelector(`[data-ih-textarea="${cssId(name)}"]`);
-        if (el) el.addEventListener('input', (e) => onChange(domain, { [field.key]: e.target.value }, { rerender: false }));
-      } else {
-        const el = container.querySelector(`[data-ih-text="${cssId(name)}"]`);
-        if (el) el.addEventListener('input', (e) => onChange(domain, { [field.key]: e.target.value }, { rerender: false }));
-      }
-    });
-  });
 }
 
 /* ============================================================

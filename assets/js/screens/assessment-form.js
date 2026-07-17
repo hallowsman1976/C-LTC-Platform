@@ -20,7 +20,7 @@ import {
   card, sectionTitle, segmentedChoice, yesNoToggle,
   wireSegmented, wireYesNo
 } from '../form-widgets.js';
-import { renderInhomesssSection, wireInhomesssSection } from './inhomesss-form.js';
+import { renderInhomesssStep, wireInhomesssStep } from './inhomesss-form.js';
 import {
   BARTHEL_ITEMS, NINE_Q_TEXTS, EIGHT_Q_TEXTS, FALL_RISK_TEXTS, CAREGIVER_BURDEN_TEXTS,
   WOUND_STAGE_OPTIONS, countInhomesssRiskFlags
@@ -243,16 +243,21 @@ const barthelRenderer = {
  */
 const inhomesssRenderer = {
   render(container, state, def, rerender) {
+    if (typeof state.inhomesssStep !== 'number') state.inhomesssStep = 0;
     const riskCount = countInhomesssRiskFlags(state.answers);
     const bannerText = riskCount === 0 ? 'ยังไม่พบข้อบ่งชี้ความเสี่ยงจากคำตอบที่กรอกไว้' : `พบข้อบ่งชี้ความเสี่ยง ${riskCount} รายการ`;
     container.innerHTML = `
       ${livePreview(bannerText)}
-      ${renderInhomesssSection(state.answers)}
+      ${renderInhomesssStep(state.answers, state.inhomesssStep)}
     `;
-    wireInhomesssSection(container, state.answers, {
+    wireInhomesssStep(container, state.answers, state.inhomesssStep, {
       onChange: (domain, patch, opts) => {
         state.answers[domain] = { ...(state.answers[domain] || {}), ...patch };
         if (opts.rerender) rerender();
+      },
+      onNavigate: (nextStep) => {
+        state.inhomesssStep = nextStep;
+        rerender();
       }
     });
   },

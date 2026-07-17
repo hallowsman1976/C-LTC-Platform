@@ -14,7 +14,7 @@ import {
   card, sectionTitle, segmentedChoice, yesNoToggle, chipMultiSelect,
   wireSegmented, wireYesNo, wireChips, toggleArrayValue, cssId
 } from '../form-widgets.js';
-import { renderInhomesssSection, wireInhomesssSection } from './inhomesss-form.js';
+import { renderInhomesssStep, wireInhomesssStep } from './inhomesss-form.js';
 import {
   BARTHEL_ITEMS, NINE_Q_TEXTS, EIGHT_Q_TEXTS, FALL_RISK_TEXTS, CAREGIVER_BURDEN_TEXTS,
   SYMPTOM_OPTIONS, SERVICE_OPTIONS, MEDICATION_OPTIONS, NUTRITION_OPTIONS, EXCRETION_OPTIONS, SLEEP_OPTIONS,
@@ -144,16 +144,21 @@ function renderStep3(container, state, ctx) {
  * ============================================================ */
 
 function renderStep4(container, state, ctx) {
+  if (typeof state.inhomesssStep !== 'number') state.inhomesssStep = 0;
   const riskCount = countInhomesssRiskFlags(state.inhomesss);
   const bannerText = riskCount === 0 ? 'ยังไม่พบข้อบ่งชี้ความเสี่ยงจากคำตอบที่กรอกไว้' : `พบข้อบ่งชี้ความเสี่ยง ${riskCount} รายการ`;
   container.innerHTML = `
     <div class="bg-sky-50 text-sky-700 text-xs rounded-xl px-3 py-2 mb-3">${escapeHtml(bannerText)} <span class="text-sky-400">(สรุปจากคำตอบที่กรอก ไม่ใช่คะแนนมาตรฐาน)</span></div>
-    ${renderInhomesssSection(state.inhomesss)}
+    ${renderInhomesssStep(state.inhomesss, state.inhomesssStep)}
   `;
-  wireInhomesssSection(container, state.inhomesss, {
+  wireInhomesssStep(container, state.inhomesss, state.inhomesssStep, {
     onChange: (domain, patch, opts) => {
       ctx.setDeepValue('inhomesss', domain, { ...(state.inhomesss[domain] || {}), ...patch });
       if (opts.rerender) ctx.rerenderStep();
+    },
+    onNavigate: (nextStep) => {
+      state.inhomesssStep = nextStep;
+      ctx.rerenderStep();
     }
   });
 }

@@ -256,9 +256,12 @@ function ensureSheet_(ss, definition) {
  */
 function trimTrailingBlankRows_(sheet) {
   var lastRow = Math.max(sheet.getLastRow(), 1);   // อย่างน้อยต้องเหลือแถว header ไว้เสมอ
+  var frozenRows = sheet.getFrozenRows();
+  // Sheets ไม่ยอมให้ลบจนเหลือ 0 แถวที่ไม่ถูกตรึง ต้องกันไว้อย่างน้อย 1 แถวเสมอ (เจอตอนชีตยังไม่มีข้อมูลแต่ตรึงแถว header ไว้แล้ว)
+  var keepRows = Math.max(lastRow, frozenRows + 1);
   var maxRows = sheet.getMaxRows();
-  if (maxRows > lastRow) {
-    sheet.deleteRows(lastRow + 1, maxRows - lastRow);
+  if (maxRows > keepRows) {
+    sheet.deleteRows(keepRows + 1, maxRows - keepRows);
   }
 }
 
@@ -376,6 +379,34 @@ function seedDefaultConfig_(driveFolderId) {
     seeded.push(key);
   });
   return seeded;
+}
+
+/**
+ * ตัดแถวว่างส่วนเกินท้ายทุกชีตทิ้ง — สำหรับล้างชีตที่จองแถวไว้ล่วงหน้าจากระบบเวอร์ชันเก่า (ก่อนเปลี่ยนมาใช้
+ * ensureRowCapacity_ แบบ dynamic ใน SheetService.gs) เรียกเองจาก Apps Script Editor เท่านั้น ไม่ผูกกับ Router.gs
+ * ปลอดภัยต่อการรันซ้ำ — ถ้าไม่มีแถวว่างเกินแล้วจะไม่ทำอะไร
+ * @return {{ok: boolean, data: Object}|{ok: boolean, code: string, message: string}}
+ */
+function cleanupExcessRows() {
+  try {
+    var ss = getSpreadsheet_();
+    var trimmed = [];
+    SHEET_DEFINITIONS_.forEach(function (definition) {
+      var sheet = ss.getSheetByName(definition.name);
+      if (!sheet) return;
+      var rowsBefore = sheet.getMaxRows();
+      trimTrailingBlankRows_(sheet);
+      var rowsAfter = sheet.getMaxRows();
+      if (rowsAfter < rowsBefore) {
+        trimmed.push({ sheet: definition.name, rowsBefore: rowsBefore, rowsAfter: rowsAfter, rowsRemoved: rowsBefore - rowsAfter });
+      }
+    });
+    Logger.log('[cleanupExcessRows] เสร็จสมบูรณ์: ' + JSON.stringify(trimmed));
+    return ok_({ sheetsTrimmed: trimmed });
+  } catch (err) {
+    Logger.log('[cleanupExcessRows] ล้มเหลว: ' + (err.stack || err));
+    return errFromException_(err, ERROR_CODES.SERVER);
+  }
 }
 
 /**
