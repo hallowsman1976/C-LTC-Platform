@@ -162,7 +162,7 @@ export async function renderPatientAssessments(content, params) {
             <p class="text-sm font-semibold text-slate-800">${escapeHtml(assessmentTitle(item.type))}</p>
             <p class="text-xs text-slate-400 mt-0.5">${escapeHtml(formatThaiDateTime(item.createdAt))}${item.visitId ? ' · จากการเยี่ยมบ้าน' : ' · ประเมินเดี่ยว'}</p>
           </div>
-          <span class="shrink-0 text-xs font-medium px-2 py-1 rounded-full bg-slate-100 text-slate-600">${escapeHtml(summarizeResult(item))}</span>
+          <span class="shrink-0 text-xs font-medium px-2 py-1 rounded-full ${resultToneClass(item)}">${escapeHtml(summarizeResult(item))}</span>
         </div>
       </a>
     `).join('');
@@ -179,6 +179,35 @@ export async function renderPatientAssessments(content, params) {
 /** @param {string} type @return {string} */
 function assessmentTitle(type) {
   return ASSESSMENT_DEFS[type] ? ASSESSMENT_DEFS[type].title : type;
+}
+
+/**
+ * สีของ badge สรุปผล ตามความรุนแรง — เดิม badge นี้เป็นสีเทาคงที่ทุกกรณี ทำให้ผลที่ต้องรีบดู (แผลกดทับ
+ * ระยะ 3-4, ความเสี่ยงสูง ฯลฯ) หน้าตาเหมือนผลปกติทุกอย่าง ต้องอ่านข้อความเองถึงจะรู้ว่าร้ายแรงแค่ไหน
+ * ใช้โทนสีเดียวกับ riskBadgeClass/statusBadgeClass ที่เหลือในแอป (rose=ร้ายแรง, amber=ปานกลาง, emerald=ปกติ)
+ * @param {Object} item
+ * @return {string} Tailwind class
+ */
+function resultToneClass(item) {
+  if (item.type === 'barthel') {
+    if (item.group === 'ติดเตียง') return 'bg-rose-100 text-rose-700';
+    if (item.group === 'ติดบ้าน') return 'bg-amber-100 text-amber-700';
+    return 'bg-emerald-100 text-emerald-700';
+  }
+  if (item.type === 'pressureulcer') {
+    if (!item.hasWound) return 'bg-emerald-100 text-emerald-700';
+    return (item.stage === '3' || item.stage === '4') ? 'bg-rose-100 text-rose-700' : 'bg-amber-100 text-amber-700';
+  }
+  if (item.type === 'depression') {
+    if (item.eightQVerdict === 'ความเสี่ยงสูง') return 'bg-rose-100 text-rose-700';
+    if (item.eightQVerdict) return 'bg-amber-100 text-amber-700';
+    if (item.nineQTotal !== null && item.nineQTotal !== undefined) return 'bg-amber-100 text-amber-700';
+    return 'bg-emerald-100 text-emerald-700';
+  }
+  if (item.verdict === 'ความเสี่ยงสูง') return 'bg-rose-100 text-rose-700';
+  if (item.verdict === 'ความเสี่ยงปานกลาง') return 'bg-amber-100 text-amber-700';
+  if (item.verdict === 'ความเสี่ยงต่ำ') return 'bg-emerald-100 text-emerald-700';
+  return 'bg-slate-100 text-slate-600';
 }
 
 /**

@@ -7,6 +7,7 @@ import { apiCall } from '../api.js';
 import { renderListSkeleton, showToast, escapeHtml } from '../ui.js';
 import { PATIENT_STATUS_OPTIONS, RISK_LEVEL_OPTIONS, ADL_GROUP_OPTIONS, riskBadgeClass, statusBadgeClass } from '../constants.js';
 import { exportToCsv } from '../csv-export.js';
+import { formatThaiDateDisplay } from '../date-picker.js';
 
 const REPORT_MAX_ROWS = 100;
 
@@ -150,7 +151,7 @@ function renderTable(container, items) {
             <td class="px-3 py-2 text-slate-500">${escapeHtml(p.adlGroup || '-')}</td>
             <td class="px-3 py-2"><span class="text-xs font-medium px-2 py-0.5 rounded-full ${riskBadgeClass(p.riskLevel)}">${escapeHtml(p.riskLevel || '-')}</span></td>
             <td class="px-3 py-2"><span class="text-xs font-medium px-2 py-0.5 rounded-full ${statusBadgeClass(p.status)}">${escapeHtml(p.status)}</span></td>
-            <td class="px-3 py-2 text-slate-500">${escapeHtml(p.nextVisitDate || '-')}</td>
+            <td class="px-3 py-2 text-slate-500">${escapeHtml(formatThaiDateDisplay(p.nextVisitDate))}</td>
           </tr>
         `).join('')}
       </tbody>
