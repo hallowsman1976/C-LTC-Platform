@@ -34,6 +34,53 @@ function statusLabel(status) {
   return found ? found.label : (status || '-');
 }
 
+/** @param {Object} n รายการแจ้งเตือนจาก admin.notifications.list @param {Object} userMap @return {string} */
+function mobileNotificationRowHtml(n, userMap) {
+  const recipient = userMap[n.recipientUserId];
+  return `
+    <div class="bg-white rounded-2xl shadow-sm p-4 mb-3">
+      <div class="flex items-start justify-between gap-2">
+        <div class="min-w-0">
+          <p class="text-sm text-slate-800">${escapeHtml(n.message)}</p>
+          <p class="text-xs text-slate-400 mt-1">
+            ถึง ${escapeHtml(recipient ? recipient.name : (n.recipientUserId || '-'))} · ${escapeHtml(n.channel || '-')} · ${escapeHtml(n.type || '-')}
+          </p>
+          <p class="text-xs text-slate-400 mt-0.5">
+            ${escapeHtml(formatThaiDateTime(n.createdAt))}${n.retryCount > 0 ? ` · ลองส่งซ้ำ ${n.retryCount} ครั้ง` : ''}
+          </p>
+        </div>
+        <span class="shrink-0 text-xs font-medium px-2 py-1 rounded-full ${STATUS_BADGE[n.status] || 'bg-slate-100 text-slate-600'}">
+          ${escapeHtml(statusLabel(n.status))}
+        </span>
+      </div>
+      ${n.relatedPatientId ? `
+        <a href="#/patients/${encodeURIComponent(n.relatedPatientId)}" class="inline-block text-xs text-sky-600 mt-2">ดูผู้ป่วยที่เกี่ยวข้อง →</a>
+      ` : ''}
+    </div>
+  `;
+}
+
+/** @param {Object} n รายการแจ้งเตือนจาก admin.notifications.list @param {Object} userMap @return {string} */
+function desktopNotificationRowHtml(n, userMap) {
+  const recipient = userMap[n.recipientUserId];
+  return `
+    <tr class="border-b border-slate-50 last:border-0 align-top">
+      <td class="px-4 py-3 whitespace-nowrap text-xs text-slate-400">
+        ${escapeHtml(formatThaiDateTime(n.createdAt))}${n.retryCount > 0 ? `<br>ลองส่งซ้ำ ${n.retryCount} ครั้ง` : ''}
+      </td>
+      <td class="px-4 py-3 text-sm text-slate-800">
+        ${escapeHtml(n.message)}
+        ${n.relatedPatientId ? `<a href="#/patients/${encodeURIComponent(n.relatedPatientId)}" class="block text-xs text-sky-600 mt-1">ดูผู้ป่วยที่เกี่ยวข้อง →</a>` : ''}
+      </td>
+      <td class="px-4 py-3 text-xs text-slate-500">${escapeHtml(recipient ? recipient.name : (n.recipientUserId || '-'))}</td>
+      <td class="px-4 py-3 text-xs text-slate-500">${escapeHtml(n.channel || '-')} · ${escapeHtml(n.type || '-')}</td>
+      <td class="px-4 py-3">
+        <span class="text-xs font-medium px-2 py-1 rounded-full ${STATUS_BADGE[n.status] || 'bg-slate-100 text-slate-600'}">${escapeHtml(statusLabel(n.status))}</span>
+      </td>
+    </tr>
+  `;
+}
+
 /** @param {HTMLElement} content */
 export async function renderAdminNotifications(content) {
   const state = { status: '', page: 1 };
@@ -80,30 +127,25 @@ export async function renderAdminNotifications(content) {
       return;
     }
 
-    resultsEl.innerHTML = data.items.map((n) => {
-      const recipient = userMap[n.recipientUserId];
-      return `
-        <div class="bg-white rounded-2xl shadow-sm p-4 mb-3">
-          <div class="flex items-start justify-between gap-2">
-            <div class="min-w-0">
-              <p class="text-sm text-slate-800">${escapeHtml(n.message)}</p>
-              <p class="text-xs text-slate-400 mt-1">
-                ถึง ${escapeHtml(recipient ? recipient.name : (n.recipientUserId || '-'))} · ${escapeHtml(n.channel || '-')} · ${escapeHtml(n.type || '-')}
-              </p>
-              <p class="text-xs text-slate-400 mt-0.5">
-                ${escapeHtml(formatThaiDateTime(n.createdAt))}${n.retryCount > 0 ? ` · ลองส่งซ้ำ ${n.retryCount} ครั้ง` : ''}
-              </p>
-            </div>
-            <span class="shrink-0 text-xs font-medium px-2 py-1 rounded-full ${STATUS_BADGE[n.status] || 'bg-slate-100 text-slate-600'}">
-              ${escapeHtml(statusLabel(n.status))}
-            </span>
-          </div>
-          ${n.relatedPatientId ? `
-            <a href="#/patients/${encodeURIComponent(n.relatedPatientId)}" class="inline-block text-xs text-sky-600 mt-2">ดูผู้ป่วยที่เกี่ยวข้อง →</a>
-          ` : ''}
-        </div>
-      `;
-    }).join('');
+    // มือถือ: การ์ดเรียงคอลัมน์เดียว (เดิม) / จอกว้าง md+: ตารางแทน — ดูอย่างเดียวไม่มีปุ่มต่อแถว จึงสลับด้วย
+    // CSS breakpoint ตรง ๆ ไม่ต้อง sync state ระหว่างกันเหมือนหน้ามอบหมายทีมดูแล
+    resultsEl.innerHTML = `
+      <div class="md:hidden">${data.items.map((n) => mobileNotificationRowHtml(n, userMap)).join('')}</div>
+      <div class="hidden md:block bg-white rounded-2xl shadow-sm overflow-hidden">
+        <table class="w-full text-sm">
+          <thead>
+            <tr class="border-b border-slate-100 text-xs text-slate-400 text-left">
+              <th class="px-4 py-2.5 font-medium whitespace-nowrap">เวลา</th>
+              <th class="px-4 py-2.5 font-medium">ข้อความ</th>
+              <th class="px-4 py-2.5 font-medium">ถึง</th>
+              <th class="px-4 py-2.5 font-medium">ช่องทาง/ประเภท</th>
+              <th class="px-4 py-2.5 font-medium">สถานะ</th>
+            </tr>
+          </thead>
+          <tbody>${data.items.map((n) => desktopNotificationRowHtml(n, userMap)).join('')}</tbody>
+        </table>
+      </div>
+    `;
 
     renderPagination(paginationEl, { page: data.page, pageSize: data.pageSize, total: data.total }, (nextPage) => {
       state.page = nextPage;

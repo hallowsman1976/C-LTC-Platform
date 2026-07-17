@@ -50,7 +50,7 @@ export async function renderAdminUsers(content) {
         </select>
       </div>
 
-      <div id="au-results"></div>
+      <div id="au-results" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3"></div>
       <div id="au-pagination"></div>
     </div>
   `;
@@ -120,7 +120,7 @@ export async function renderAdminUsers(content) {
 function userCardHtml(u) {
   const identity = u.username ? `ชื่อผู้ใช้ ${u.username}` : (u.cidMasked ? `บัตร ${u.cidMasked}` : '-');
   return `
-    <div class="bg-white rounded-2xl shadow-sm p-4 mb-3" data-user-card="${escapeHtml(u.userId)}">
+    <div class="bg-white rounded-2xl shadow-sm p-4" data-user-card="${escapeHtml(u.userId)}">
       <div class="flex items-start justify-between gap-2">
         <div class="min-w-0">
           <p class="text-sm font-semibold text-slate-800 truncate">${escapeHtml(u.name)}</p>

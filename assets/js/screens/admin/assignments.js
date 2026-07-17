@@ -157,7 +157,33 @@ function renderRows(container, state, ctx) {
     return;
   }
 
-  container.innerHTML = rows.map((p) => `
+  // มือถือ: การ์ดเรียงคอลัมน์เดียว (เดิม) / จอกว้าง md+: ตารางแทน เพื่อใช้พื้นที่จอกว้างให้คุ้ม — ทั้งสองชุด
+  // อยู่ใน DOM พร้อมกันเสมอ (สลับด้วย CSS md:hidden/hidden md:table เท่านั้น) เพราะ data-patient-row ซ้ำกัน
+  // 2 ตัวต่อผู้ป่วย 1 คน wireRow ด้านล่างจึงต้อง sync ค่า select/สถานะให้ตรงกันทั้งสองชุดเสมอ ไม่งั้นถ้าผู้ใช้
+  // ปรับขนาดหน้าต่าง (มือถือ ↔ จอกว้าง) หลังแก้ไข จะเห็นค่าเก่าค้างอยู่ในชุดที่ไม่ได้แสดงตอนแก้
+  container.innerHTML = `
+    <div class="md:hidden">${rows.map((p) => mobileRowHtml(p, ctx)).join('')}</div>
+    <div class="hidden md:block bg-white rounded-2xl shadow-sm overflow-hidden">
+      <table class="w-full text-sm">
+        <thead>
+          <tr class="border-b border-slate-100 text-xs text-slate-400 text-left">
+            <th class="px-4 py-2.5 font-medium">ผู้ป่วย</th>
+            <th class="px-4 py-2.5 font-medium">ผู้ดูแลหลัก (CG)</th>
+            <th class="px-4 py-2.5 font-medium">Case Manager (CM)</th>
+            <th class="px-4 py-2.5 font-medium">สถานะ</th>
+          </tr>
+        </thead>
+        <tbody>${rows.map((p) => desktopRowHtml(p, ctx)).join('')}</tbody>
+      </table>
+    </div>
+  `;
+
+  rows.forEach((p) => wireRow(container, p, state, ctx));
+}
+
+/** @param {Object} p @param {{cgOptions:Array, cmOptions:Array}} ctx @return {string} */
+function mobileRowHtml(p, ctx) {
+  return `
     <div class="bg-white rounded-2xl shadow-sm p-4 mb-3" data-patient-row="${escapeHtml(p.patientId)}">
       <div class="flex items-start justify-between gap-2 mb-3">
         <div class="min-w-0">
@@ -177,9 +203,22 @@ function renderRows(container, state, ctx) {
         </div>
       </div>
     </div>
-  `).join('');
+  `;
+}
 
-  rows.forEach((p) => wireRow(container, p, state, ctx));
+/** @param {Object} p @param {{cgOptions:Array, cmOptions:Array}} ctx @return {string} */
+function desktopRowHtml(p, ctx) {
+  return `
+    <tr class="border-b border-slate-50 last:border-0" data-patient-row="${escapeHtml(p.patientId)}">
+      <td class="px-4 py-3 align-top">
+        <a href="#/patients/${encodeURIComponent(p.patientId)}" class="text-sm font-semibold text-slate-800 hover:text-sky-600">${escapeHtml(p.name)}</a>
+        <p class="text-xs text-slate-400 mt-0.5">HN ${escapeHtml(p.hn)} · ${escapeHtml(p.village || '-')}</p>
+      </td>
+      <td class="px-4 py-3 align-top">${selectHtml('cg', ctx.cgOptions, p.primaryCgUserId)}</td>
+      <td class="px-4 py-3 align-top">${selectHtml('cm', ctx.cmOptions, p.responsibleCmUserId)}</td>
+      <td class="px-4 py-3 align-top"><span data-row-status class="text-xs text-slate-400"></span></td>
+    </tr>
+  `;
 }
 
 /** @param {string} kind @param {Array<Object>} options @param {string} selected */
@@ -194,42 +233,54 @@ function selectHtml(kind, options, selected) {
   `;
 }
 
+/** สี/ข้อความสถานะ — แยกจาก positional class เดิม (เช่น shrink-0 ของการ์ดมือถือ) เพื่อไม่ให้ทับกันตอนอัปเดต */
+const STATUS_TONE_CLASS = { pending: 'text-slate-400', ok: 'text-emerald-600', error: 'text-rose-600' };
+
+/** @param {HTMLElement} row @param {string} text @param {'pending'|'ok'|'error'} tone */
+function setRowStatus(row, text, tone) {
+  const el = row.querySelector('[data-row-status]');
+  if (!el) return;
+  el.textContent = text;
+  Object.values(STATUS_TONE_CLASS).forEach((c) => el.classList.remove(c));
+  el.classList.add(STATUS_TONE_CLASS[tone]);
+}
+
 /**
+ * ผูก event ให้ "ทุก" element ที่มี data-patient-row ตรงกัน — ปกติมี 2 ตัวเสมอ (การ์ดมือถือ + แถวตาราง
+ * เดสก์ท็อป) เพราะทั้งสองชุดอยู่ใน DOM พร้อมกัน สลับด้วย CSS breakpoint เท่านั้น ไม่ใช่แค่ตัวที่มองเห็น
+ * ตอนนี้ ต้องอัปเดตค่า select/สถานะทั้งสองชุดพร้อมกันทุกครั้ง ไม่งั้นสลับขนาดจอหลังแก้ไขจะเห็นค่าเก่าค้าง
  * @param {HTMLElement} container
  * @param {Object} patient
  * @param {Object} state
  * @param {{onChanged: Function}} ctx
  */
 function wireRow(container, patient, state, ctx) {
-  const row = container.querySelector(`[data-patient-row="${cssEscape(patient.patientId)}"]`);
-  if (!row) return;
-  const statusEl = row.querySelector('[data-row-status]');
+  const instances = Array.from(container.querySelectorAll(`[data-patient-row="${cssEscape(patient.patientId)}"]`));
+  if (instances.length === 0) return;
 
   const bind = (kind, payloadKey, stateKey) => {
-    const select = row.querySelector(`[data-assign="${kind}"]`);
-    select.addEventListener('change', async () => {
-      const previous = patient[stateKey] || '';
-      const next = select.value;
-      select.disabled = true;
-      statusEl.textContent = 'กำลังบันทึก...';
-      statusEl.className = 'shrink-0 text-xs text-slate-400';
-      try {
-        // ส่งเฉพาะ key ที่เปลี่ยน — assignCareTeam แก้เฉพาะ key ที่ส่งมา (ค่าว่าง = เคลียร์ผู้รับผิดชอบ)
-        // ถ้าส่งทั้งสอง key ทุกครั้งจะกลายเป็นเขียนทับอีกฝั่งด้วยค่าที่หน้าจออาจเก่าไปแล้ว
-        await apiCall('patients.assignCareTeam', { patientId: patient.patientId, [payloadKey]: next });
-        patient[stateKey] = next;   // อัปเดต state ในเครื่องให้ตัวนับ/ตัวกรองตรงโดยไม่ต้องดึงใหม่ทั้งชุด
-        statusEl.textContent = 'บันทึกแล้ว';
-        statusEl.className = 'shrink-0 text-xs text-emerald-600';
-        showToast(`บันทึกการมอบหมายของ ${patient.name} แล้ว`, 'success');
-        ctx.onChanged();
-      } catch (err) {
-        select.value = previous;   // ย้อนกลับให้ตรงกับของจริงบนเซิร์ฟเวอร์ ไม่ให้หน้าจอโกหกว่าบันทึกแล้ว
-        statusEl.textContent = 'บันทึกไม่สำเร็จ';
-        statusEl.className = 'shrink-0 text-xs text-rose-600';
-        showToast(err && err.message ? err.message : 'บันทึกการมอบหมายไม่สำเร็จ', 'error');
-      } finally {
-        select.disabled = false;
-      }
+    instances.forEach((row) => {
+      const select = row.querySelector(`[data-assign="${kind}"]`);
+      select.addEventListener('change', async () => {
+        const previous = patient[stateKey] || '';
+        const next = select.value;
+        instances.forEach((r) => { r.querySelector(`[data-assign="${kind}"]`).disabled = true; setRowStatus(r, 'กำลังบันทึก...', 'pending'); });
+        try {
+          // ส่งเฉพาะ key ที่เปลี่ยน — assignCareTeam แก้เฉพาะ key ที่ส่งมา (ค่าว่าง = เคลียร์ผู้รับผิดชอบ)
+          // ถ้าส่งทั้งสอง key ทุกครั้งจะกลายเป็นเขียนทับอีกฝั่งด้วยค่าที่หน้าจออาจเก่าไปแล้ว
+          await apiCall('patients.assignCareTeam', { patientId: patient.patientId, [payloadKey]: next });
+          patient[stateKey] = next;   // อัปเดต state ในเครื่องให้ตัวนับ/ตัวกรองตรงโดยไม่ต้องดึงใหม่ทั้งชุด
+          instances.forEach((r) => { r.querySelector(`[data-assign="${kind}"]`).value = next; setRowStatus(r, 'บันทึกแล้ว', 'ok'); });
+          showToast(`บันทึกการมอบหมายของ ${patient.name} แล้ว`, 'success');
+          ctx.onChanged();
+        } catch (err) {
+          // ย้อนกลับให้ตรงกับของจริงบนเซิร์ฟเวอร์ ไม่ให้หน้าจอโกหกว่าบันทึกแล้ว
+          instances.forEach((r) => { r.querySelector(`[data-assign="${kind}"]`).value = previous; setRowStatus(r, 'บันทึกไม่สำเร็จ', 'error'); });
+          showToast(err && err.message ? err.message : 'บันทึกการมอบหมายไม่สำเร็จ', 'error');
+        } finally {
+          instances.forEach((r) => { r.querySelector(`[data-assign="${kind}"]`).disabled = false; });
+        }
+      });
     });
   };
 

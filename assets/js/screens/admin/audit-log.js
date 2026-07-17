@@ -83,24 +83,25 @@ export async function renderAdminAuditLog(content) {
       return;
     }
 
-    resultsEl.innerHTML = data.items.map((row) => {
-      const actor = userMap[row.UserId];
-      return `
-        <div class="bg-white rounded-2xl shadow-sm p-3 mb-2">
-          <div class="flex items-start justify-between gap-2">
-            <div class="min-w-0">
-              <p class="text-sm font-medium text-slate-800 break-all">${escapeHtml(row.Action || '-')}</p>
-              <p class="text-xs text-slate-400 mt-0.5">
-                ${escapeHtml(actor ? actor.name : (row.UserId || 'ระบบ'))}
-                ${row.TargetType ? ' · ' + escapeHtml(row.TargetType) : ''}${row.TargetId ? ' ' + escapeHtml(row.TargetId) : ''}
-              </p>
-            </div>
-            <span class="shrink-0 text-xs text-slate-400">${escapeHtml(formatThaiDateTime(row.Timestamp))}</span>
-          </div>
-          ${renderDetail(row.Detail)}
-        </div>
-      `;
-    }).join('');
+    // มือถือ: การ์ดเรียงคอลัมน์เดียว (เดิม) / จอกว้าง md+: ตารางแทน — ไม่มีปุ่ม/การโต้ตอบต่อแถวเลย (ดูอย่างเดียว)
+    // จึงแค่สร้าง markup 2 ชุดแล้วสลับด้วย CSS breakpoint โดยไม่ต้อง sync state ระหว่างกันเหมือนหน้ามอบหมายทีมดูแล
+    resultsEl.innerHTML = `
+      <div class="md:hidden">${data.items.map((row) => mobileLogRowHtml(row, userMap)).join('')}</div>
+      <div class="hidden md:block bg-white rounded-2xl shadow-sm overflow-hidden">
+        <table class="w-full text-sm">
+          <thead>
+            <tr class="border-b border-slate-100 text-xs text-slate-400 text-left">
+              <th class="px-4 py-2.5 font-medium whitespace-nowrap">เวลา</th>
+              <th class="px-4 py-2.5 font-medium">การกระทำ</th>
+              <th class="px-4 py-2.5 font-medium">ผู้ทำรายการ</th>
+              <th class="px-4 py-2.5 font-medium">เป้าหมาย</th>
+              <th class="px-4 py-2.5 font-medium">รายละเอียด</th>
+            </tr>
+          </thead>
+          <tbody>${data.items.map((row) => desktopLogRowHtml(row, userMap)).join('')}</tbody>
+        </table>
+      </div>
+    `;
 
     renderPagination(paginationEl, { page: data.page, pageSize: data.pageSize, total: data.total }, (nextPage) => {
       state.page = nextPage;
@@ -142,6 +143,40 @@ export async function renderAdminAuditLog(content) {
  */
 function endOfDayIso(isoDate) {
   return isoDate ? `${isoDate}T23:59:59.999Z` : '';
+}
+
+/** @param {Object} row แถวดิบจาก admin.auditLog.list @param {Object} userMap @return {string} */
+function mobileLogRowHtml(row, userMap) {
+  const actor = userMap[row.UserId];
+  return `
+    <div class="bg-white rounded-2xl shadow-sm p-3 mb-2">
+      <div class="flex items-start justify-between gap-2">
+        <div class="min-w-0">
+          <p class="text-sm font-medium text-slate-800 break-all">${escapeHtml(row.Action || '-')}</p>
+          <p class="text-xs text-slate-400 mt-0.5">
+            ${escapeHtml(actor ? actor.name : (row.UserId || 'ระบบ'))}
+            ${row.TargetType ? ' · ' + escapeHtml(row.TargetType) : ''}${row.TargetId ? ' ' + escapeHtml(row.TargetId) : ''}
+          </p>
+        </div>
+        <span class="shrink-0 text-xs text-slate-400">${escapeHtml(formatThaiDateTime(row.Timestamp))}</span>
+      </div>
+      ${renderDetail(row.Detail)}
+    </div>
+  `;
+}
+
+/** @param {Object} row แถวดิบจาก admin.auditLog.list @param {Object} userMap @return {string} */
+function desktopLogRowHtml(row, userMap) {
+  const actor = userMap[row.UserId];
+  return `
+    <tr class="border-b border-slate-50 last:border-0 align-top">
+      <td class="px-4 py-3 whitespace-nowrap text-xs text-slate-400">${escapeHtml(formatThaiDateTime(row.Timestamp))}</td>
+      <td class="px-4 py-3 text-sm font-medium text-slate-800 break-all">${escapeHtml(row.Action || '-')}</td>
+      <td class="px-4 py-3 text-xs text-slate-500">${escapeHtml(actor ? actor.name : (row.UserId || 'ระบบ'))}</td>
+      <td class="px-4 py-3 text-xs text-slate-500">${row.TargetType ? escapeHtml(row.TargetType) : '-'}${row.TargetId ? ' ' + escapeHtml(row.TargetId) : ''}</td>
+      <td class="px-4 py-3">${renderDetail(row.Detail) || '<span class="text-xs text-slate-300">-</span>'}</td>
+    </tr>
+  `;
 }
 
 /**
