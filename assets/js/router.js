@@ -27,6 +27,7 @@ import { renderAdminUsers } from './screens/admin/users.js';
 import { renderAdminAssignments } from './screens/admin/assignments.js';
 import { renderAdminAuditLog } from './screens/admin/audit-log.js';
 import { renderAdminNotifications } from './screens/admin/notifications.js';
+import { renderAdminPatientsImport } from './screens/admin/patients-import.js';
 import { initSyncManager } from './offline/sync.js';
 
 const DEFAULT_ROUTE = '/dashboard';
@@ -59,7 +60,8 @@ const routeDefs = [
   { pattern: '/admin/users', title: 'จัดการผู้ใช้', roles: ['ADMIN'], render: renderAdminUsers },
   { pattern: '/admin/assignments', title: 'มอบหมายทีมดูแล', roles: ['ADMIN'], render: renderAdminAssignments },
   { pattern: '/admin/audit-log', title: 'Audit Log', roles: ['ADMIN'], render: renderAdminAuditLog },
-  { pattern: '/admin/notifications', title: 'การแจ้งเตือน', roles: ['ADMIN'], render: renderAdminNotifications }
+  { pattern: '/admin/notifications', title: 'การแจ้งเตือน', roles: ['ADMIN'], render: renderAdminNotifications },
+  { pattern: '/admin/patients-import', title: 'นำเข้าข้อมูลผู้ป่วย', roles: ['ADMIN'], render: renderAdminPatientsImport }
 ];
 
 function getContentEl() {

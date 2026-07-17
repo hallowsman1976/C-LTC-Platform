@@ -112,6 +112,18 @@ function parseTypedDate(value) {
 }
 
 /**
+ * แปลงข้อความวันที่ตามที่ผู้ใช้พิมพ์/วางมา (ISO, D/M/YYYY พ.ศ./ค.ศ., "16 กรกฎาคม 2569" ฯลฯ — ดู parseTypedDate
+ * ด้านบนสำหรับรูปแบบทั้งหมดที่รับ) → ISO string ตรงตามที่ backend เก็บ — ใช้กับคอลัมน์วันที่ตอนนำเข้าไฟล์ CSV
+ * ผู้ป่วยจำนวนมาก (screens/admin/patients-import.js) ที่ผู้กรอกอาจพิมพ์วันที่มาหลายรูปแบบต่างจาก date picker
+ * @param {string} value
+ * @return {string|null} "YYYY-MM-DD" หรือ null ถ้า parse ไม่ได้
+ */
+export function parseTypedDateToIso(value) {
+  const date = parseTypedDate(value);
+  return date ? toIsoString(date) : null;
+}
+
+/**
  * คำนวณอายุจากวันเกิด — ต้องให้ผลตรงกับ computeAge_ ใน Patients.gs เป๊ะ (สูตรเดียวกัน: ปีต่างกัน
  * แล้วลบ 1 ถ้ายังไม่ถึงวันเกิดปีนี้) ไม่งั้นตัวเลขที่โชว์ตอนกรอกจะไม่ตรงกับที่ backend คำนวณเก็บจริง
  * @param {string} isoValue "YYYY-MM-DD"

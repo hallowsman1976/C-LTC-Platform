@@ -75,6 +75,11 @@ var ACTION_ROUTES_ = {
     roles: ['ADMIN'],
     handler: function (ctx) { return archivePatient(ctx.payload, ctx.user); }
   },
+  'patients.import': {
+    requireAuth: true,
+    roles: ['ADMIN'],
+    handler: function (ctx) { return importPatients(ctx.payload, ctx.user); }
+  },
   'patients.assignCareTeam': {
     requireAuth: true,
     roles: ['ADMIN', 'CM'],

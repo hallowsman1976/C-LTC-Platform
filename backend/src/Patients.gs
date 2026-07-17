@@ -12,6 +12,7 @@
 var PATIENT_REQUIRED_FIELDS_ = ['name', 'gender', 'birthDate', 'hn', 'cid', 'village', 'tambon', 'amphoe', 'changwat'];
 var PATIENT_PATCH_ALLOWED_KEYS_ = ['name', 'gender', 'birthDate', 'hn', 'village', 'tambon', 'amphoe', 'changwat', 'status', 'nextVisitDate'];
 var PATIENT_LIST_MAX_PAGE_SIZE_ = 100;
+var PATIENT_IMPORT_MAX_ROWS_ = 500;
 
 /* ============================================================
  * Ownership / Visibility scoping — ใช้ร่วมกับ CarePlans.gs
@@ -193,6 +194,141 @@ function createPatient(payload, callerUser) {
   logAudit_(callerUser.userId, 'patients.create', 'Patient', created.PatientId, { hn: hn });
 
   return ok_({ patient: sanitizePatientForClient_(created, callerUser, { forceMask: false }) });
+}
+
+/* ============================================================
+ * importPatients — action: patients.import (ADMIN เท่านั้น — สร้างผู้ป่วยหลายรายพร้อมกันจากไฟล์ CSV)
+ * ============================================================ */
+
+/**
+ * นำเข้าผู้ป่วยหลายรายพร้อมกัน — ไม่ผูก CG/CM (มอบหมายทีมดูแลทำแยกที่ /admin/assignments ทีหลัง)
+ * แถวที่ผ่านการตรวจจะถูกสร้างจริง ส่วนแถวที่ไม่ผ่านจะถูกข้าม ไม่ทำให้ทั้งไฟล์ล้มเหลว — คืนผลลัพธ์ราย
+ * แถวกลับไปให้ frontend แสดงสรุปว่าสำเร็จ/ล้มเหลวข้อไหนบ้าง
+ * @param {{rows: Array<Object>}} payload rows แต่ละอันมีรูปร่างเดียวกับ payload ของ createPatient (ไม่รวม
+ *        primaryCgUserId/responsibleCmUserId)
+ * @param {Object} callerUser
+ * @return {{ok: boolean, data: Object}|{ok: boolean, code: string, message: string}}
+ */
+function importPatients(payload, callerUser) {
+  payload = payload || {};
+  var rows = payload.rows;
+
+  if (!Array.isArray(rows) || rows.length === 0) {
+    return err_(ERROR_CODES.VALIDATION, 'ไม่พบข้อมูลที่จะนำเข้า');
+  }
+  if (rows.length > PATIENT_IMPORT_MAX_ROWS_) {
+    return err_(ERROR_CODES.VALIDATION, 'นำเข้าได้สูงสุดครั้งละ ' + PATIENT_IMPORT_MAX_ROWS_ + ' รายการ กรุณาแบ่งไฟล์');
+  }
+
+  // อ่านชีตครั้งเดียวมาสร้างชุดตรวจซ้ำ HN/CID แทนการ findRecord_ (ไล่สแกนทั้งชีต) ทีละแถว — เร็วกว่ามาก
+  // เมื่อมีหลายร้อยแถว และยังใช้ตรวจกันซ้ำ "ภายในไฟล์เดียวกัน" ได้ด้วย (เพิ่มเข้าไปในชุดทันทีที่แถวก่อนหน้าผ่าน)
+  var existing = readAllRecords_(SHEET_NAMES.PATIENTS).records;
+  var hnSeen = {};
+  var cidSeen = {};
+  existing.forEach(function (p) {
+    if (p.HN) hnSeen[String(p.HN).toLowerCase()] = true;
+    if (p.CID) cidSeen[String(p.CID)] = true;
+  });
+
+  var results = [];
+  var toInsert = [];
+  var now = new Date().toISOString();
+
+  rows.forEach(function (rawRow, i) {
+    var check = validateImportRow_(rawRow, hnSeen, cidSeen);
+    if (!check.ok) {
+      results.push({ row: i + 1, ok: false, message: check.message, fields: check.fields || null });
+      return;
+    }
+    hnSeen[check.hnLower] = true;
+    cidSeen[check.cid] = true;
+    toInsert.push({
+      PatientId: generateShortId_('P'),
+      HN: check.hn,
+      CID: check.cid,
+      Name: rawRow.name,
+      Gender: rawRow.gender,
+      BirthDate: check.birthDate,
+      Village: rawRow.village,
+      Tambon: rawRow.tambon,
+      Amphoe: rawRow.amphoe,
+      Changwat: rawRow.changwat,
+      AdlGroup: '',
+      AdlScore: 0,
+      RiskLevel: '',
+      PrimaryCgUserId: '',
+      ResponsibleCmUserId: '',
+      Status: isValidEnum_(rawRow.status, ENUM_PATIENT_STATUS_) ? rawRow.status : 'ยังไม่นัด',
+      NextVisitDate: check.nextVisitDate,
+      DriveFolderId: '',
+      IsDeleted: false,
+      CreatedAt: now,
+      UpdatedAt: now
+    });
+    results.push({ row: i + 1, ok: true, hn: check.hn, name: rawRow.name });
+  });
+
+  var created = toInsert.length > 0 ? appendRecords_(SHEET_NAMES.PATIENTS, toInsert) : [];
+  var createdIndex = 0;
+  results.forEach(function (r) {
+    if (r.ok) {
+      r.patientId = created[createdIndex].PatientId;
+      createdIndex++;
+    }
+  });
+
+  logAudit_(callerUser.userId, 'patients.import', 'Patient', '-', {
+    totalRows: rows.length, created: toInsert.length, failed: rows.length - toInsert.length
+  });
+
+  return ok_({
+    total: rows.length,
+    createdCount: toInsert.length,
+    failedCount: rows.length - toInsert.length,
+    results: results
+  });
+}
+
+/**
+ * ตรวจ 1 แถวตามกติกาเดียวกับ createPatient (required fields, enum, checksum) บวกตรวจซ้ำ HN/CID กับ
+ * hnSeen/cidSeen ที่ผู้เรียกสะสมไว้ (ทั้งจากชีตเดิมและจากแถวก่อนหน้าในไฟล์เดียวกัน)
+ * @param {Object} rawRow
+ * @param {Object} hnSeen key = HN ตัวพิมพ์เล็ก
+ * @param {Object} cidSeen key = CID
+ * @return {{ok: true, hn: string, hnLower: string, cid: string, birthDate: string, nextVisitDate: string}
+ *         |{ok: false, message: string, fields: (Object|null)}}
+ */
+function validateImportRow_(rawRow, hnSeen, cidSeen) {
+  var requiredCheck = validateRequiredFields_(rawRow, PATIENT_REQUIRED_FIELDS_);
+  if (!requiredCheck.valid) {
+    return { ok: false, message: 'ข้อมูลไม่ครบ: ' + Object.keys(requiredCheck.fields).join(', '), fields: requiredCheck.fields };
+  }
+  if (!isValidEnum_(rawRow.gender, ENUM_GENDER_)) {
+    return { ok: false, message: 'เพศไม่ถูกต้อง ต้องเป็น ' + ENUM_GENDER_.join(' หรือ ') };
+  }
+  if (!isValidIsoDate_(rawRow.birthDate)) {
+    return { ok: false, message: 'วันเกิดไม่ถูกต้อง (ต้องเป็น YYYY-MM-DD)' };
+  }
+
+  var cid = String(rawRow.cid).trim();
+  if (!isValidThaiCid_(cid)) {
+    return { ok: false, message: 'เลขประจำตัวประชาชนไม่ถูกต้อง' };
+  }
+  if (cidSeen[cid]) {
+    return { ok: false, message: 'เลขประจำตัวประชาชนนี้ซ้ำ (มีอยู่แล้ว หรือซ้ำในไฟล์เดียวกัน)' };
+  }
+
+  var hn = String(rawRow.hn).trim();
+  var hnLower = hn.toLowerCase();
+  if (hnSeen[hnLower]) {
+    return { ok: false, message: 'HN นี้ซ้ำ (มีอยู่แล้ว หรือซ้ำในไฟล์เดียวกัน)' };
+  }
+
+  if (rawRow.nextVisitDate && !isValidIsoDate_(rawRow.nextVisitDate)) {
+    return { ok: false, message: 'วันนัดเยี่ยมถัดไปไม่ถูกต้อง (ต้องเป็น YYYY-MM-DD)' };
+  }
+
+  return { ok: true, hn: hn, hnLower: hnLower, cid: cid, birthDate: rawRow.birthDate, nextVisitDate: rawRow.nextVisitDate || '' };
 }
 
 /* ============================================================
