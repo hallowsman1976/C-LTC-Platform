@@ -24,7 +24,7 @@ export async function renderPatientsList(content) {
         ${canCreate ? '<a href="#/patients/new" class="px-3 py-2 rounded-xl bg-sky-600 text-white text-sm font-medium">+ เพิ่มผู้ป่วย</a>' : ''}
       </div>
 
-      <div class="bg-white rounded-2xl shadow-sm p-3 mb-4 space-y-2">
+      <div class="bg-white rounded-2xl shadow-soft p-3 mb-4 space-y-2">
         <input id="pl-search" type="text" placeholder="ค้นหาชื่อ, HN, หมู่บ้าน หรือเลขบัตร 13 หลัก"
           class="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500" />
         <div class="grid grid-cols-3 gap-2">
@@ -102,8 +102,8 @@ function renderResults(container, items) {
     return;
   }
 
-  container.innerHTML = items.map((p) => `
-    <a href="#/patients/${encodeURIComponent(p.patientId)}" class="block bg-white rounded-2xl shadow-sm p-4 mb-3 active:bg-slate-50">
+  container.innerHTML = items.map((p, i) => `
+    <a href="#/patients/${encodeURIComponent(p.patientId)}" class="shadow-soft shadow-soft-interactive animate-rise-in block bg-white rounded-2xl p-4 mb-3 active:bg-slate-50" style="--delay:${Math.min(i, 8) * 40}ms">
       <div class="flex items-start justify-between gap-2">
         <div class="min-w-0">
           <p class="text-sm font-semibold text-slate-800 truncate">${escapeHtml(p.name)}</p>

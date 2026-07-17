@@ -26,7 +26,7 @@ export async function renderReports(content) {
         </div>
       </div>
 
-      <div class="bg-white rounded-2xl shadow-sm p-3 mb-4 grid grid-cols-3 gap-2 no-print">
+      <div class="shadow-soft bg-white rounded-2xl p-3 mb-4 grid grid-cols-3 gap-2 no-print">
         <select id="rp-status" class="px-2 py-2 rounded-xl border border-slate-200 text-xs focus:outline-none focus:ring-2 focus:ring-sky-500">
           <option value="">สถานะทั้งหมด</option>
           ${PATIENT_STATUS_OPTIONS.map((s) => `<option value="${escapeHtml(s)}">${escapeHtml(s)}</option>`).join('')}
@@ -47,7 +47,7 @@ export async function renderReports(content) {
       </div>
 
       <div id="rp-summary" class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4"></div>
-      <div id="rp-table" class="bg-white rounded-2xl shadow-sm overflow-x-auto"></div>
+      <div id="rp-table" class="shadow-soft bg-white rounded-2xl overflow-x-auto"></div>
       <p id="rp-truncated-note" class="hidden text-xs text-amber-600 mt-2">แสดงผล 100 รายการแรกเท่านั้น (มีมากกว่านี้) — ใช้ตัวกรองเพื่อจำกัดผลลัพธ์</p>
     </div>
   `;
@@ -113,9 +113,9 @@ function renderSummary(container, items) {
     { label: 'เลยนัด', value: overdue, color: 'text-amber-700' }
   ];
 
-  container.innerHTML = cards.map((card) => `
-    <div class="bg-white rounded-2xl shadow-sm p-4">
-      <p class="text-2xl font-bold ${card.color}">${card.value}</p>
+  container.innerHTML = cards.map((card, i) => `
+    <div class="shadow-soft animate-rise-in bg-white rounded-2xl p-4" style="--delay:${i * 60}ms">
+      <p class="text-2xl font-extrabold tabular-nums ${card.color}">${card.value}</p>
       <p class="text-xs text-slate-400 mt-1">${escapeHtml(card.label)}</p>
     </div>
   `).join('');
