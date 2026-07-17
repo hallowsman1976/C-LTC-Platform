@@ -117,6 +117,10 @@ function checkAdlDecline_() {
     byPatient[r.PatientId].push(r);
   });
 
+  // อ่าน Patients ครั้งเดียวมาทำ map ในหน่วยความจำ แทน findRecordByKey_ (ไล่สแกนทั้งชีต) ต่อผู้ป่วยในลูปข้างล่าง
+  var patientsById = {};
+  readAllRecords_(SHEET_NAMES.PATIENTS).records.forEach(function (p) { patientsById[p.PatientId] = p; });
+
   var recentCutoffMs = Date.now() - RECENT_CHECK_LOOKBACK_HOURS_ * 60 * 60 * 1000;
   var count = 0;
 
@@ -133,7 +137,7 @@ function checkAdlDecline_() {
     var previousScore = Number(previous.TotalScore);
     if (isNaN(latestScore) || isNaN(previousScore) || latestScore >= previousScore) return;
 
-    var patient = findRecordByKey_(SHEET_NAMES.PATIENTS, 'PatientId', patientId);
+    var patient = patientsById[patientId];
     if (!patient || coerceBoolean_(patient.IsDeleted)) return;
 
     triggerRiskAlertIfNeeded_(patient, 'adl_decline',
@@ -153,6 +157,10 @@ function checkMedicationNonAdherence_() {
     byPatient[v.PatientId].push(v);
   });
 
+  // อ่าน Patients ครั้งเดียวมาทำ map ในหน่วยความจำ แทน findRecordByKey_ (ไล่สแกนทั้งชีต) ต่อผู้ป่วยในลูปข้างล่าง
+  var patientsById = {};
+  readAllRecords_(SHEET_NAMES.PATIENTS).records.forEach(function (p) { patientsById[p.PatientId] = p; });
+
   var recentCutoffMs = Date.now() - RECENT_CHECK_LOOKBACK_HOURS_ * 60 * 60 * 1000;
   var count = 0;
 
@@ -163,7 +171,7 @@ function checkMedicationNonAdherence_() {
     if (isNaN(latestTimeMs) || latestTimeMs < recentCutoffMs) return;
     if (latest.Medication !== 'ขาดยาต่อเนื่อง') return;
 
-    var patient = findRecordByKey_(SHEET_NAMES.PATIENTS, 'PatientId', patientId);
+    var patient = patientsById[patientId];
     if (!patient || coerceBoolean_(patient.IsDeleted)) return;
 
     triggerRiskAlertIfNeeded_(patient, 'medication_non_adherence',

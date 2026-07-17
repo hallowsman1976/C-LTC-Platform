@@ -222,13 +222,11 @@ function submitVisit(payload, callerUser) {
     });
   }
 
-  var visitNumber = computeVisitNumber_(patientId);
   var now = new Date().toISOString();
 
   var patch = buildVisitPatchFromPayload_(payload);
   patch.PatientId = patientId;
   patch.VisitedByUserId = callerUser.userId;
-  patch.VisitNumber = visitNumber;
   patch.VisitDate = now;
   patch.HasWound = hasWound;
   patch.WoundStage = woundStage;
@@ -246,7 +244,15 @@ function submitVisit(payload, callerUser) {
     patch.ReviewNote = '';
   }
 
-  var saved = upsertByKey_(SHEET_NAMES.VISITS, 'ClientTempId', clientTempId, patch);
+  // นับ VisitNumber + เขียนแถวต้องอยู่ใน lock เดียวกัน (atomic) — computeVisitNumber_ เป็นแค่การอ่าน ไม่ได้
+  // ล็อกเอง ถ้านับนอก lock แล้วค่อยเขียน 2 คำขอ submit ที่ชนกันพอดี (เช่น sync offline ไล่ตามหลัง) อาจอ่าน
+  // จำนวนเดิมก่อนแถวใหม่ถูกเขียนจริง แล้วได้ VisitNumber ซ้ำกันทั้งคู่
+  var visitNumber;
+  var saved = withSheetLock_(function () {
+    visitNumber = computeVisitNumber_(patientId);
+    patch.VisitNumber = visitNumber;
+    return upsertByKeyUnlocked_(SHEET_NAMES.VISITS, 'ClientTempId', clientTempId, patch);
+  });
 
   // อัปเดตสถานะผู้ป่วย: นัดวันนี้/เลยนัด/ยังไม่นัด → เยี่ยมแล้ว
   updateRecord_(SHEET_NAMES.PATIENTS, patient._rowIndex, { Status: 'เยี่ยมแล้ว', UpdatedAt: now });

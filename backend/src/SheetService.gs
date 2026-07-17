@@ -181,15 +181,25 @@ function ensureRowCapacity_(sheet, sheetName, startRow, numRows) {
  * @return {Object} record ที่เขียนจริง พร้อม _rowIndex
  */
 function appendRecord_(sheetName, record) {
-  return withSheetLock_(function () {
-    var sheet = getSheetByName_(sheetName);
-    var headers = getHeaderRow_(sheet);
-    var row = recordToRow_(headers, record);
-    var rowIndex = sheet.getLastRow() + 1;
-    ensureRowCapacity_(sheet, sheetName, rowIndex, 1);   // ต้องมาก่อน setValues เสมอ (format ก่อนค่า)
-    sheet.getRange(rowIndex, 1, 1, headers.length).setValues([row]);
-    return rowToRecord_(headers, row, rowIndex);
-  });
+  return withSheetLock_(function () { return appendRecordUnlocked_(sheetName, record); });
+}
+
+/**
+ * เหมือน appendRecord_ ทุกประการ แต่ "ไม่" ขอ lock เอง — ใช้เมื่อผู้เรียกต้องทำ read-then-write เป็นก้อนเดียว
+ * ภายใต้ lock เดียวกัน (เช่น submitVisit ที่ต้องนับ VisitNumber แล้วเขียนแบบ atomic กันคำนวณเลขซ้ำเวลามีคำขอ
+ * ชนกัน) ห้ามเรียกตรง ๆ นอก withSheetLock_ เด็ดขาด — จะเขียนโดยไม่มี lock ป้องกัน race condition เลย
+ * @param {string} sheetName
+ * @param {Object} record
+ * @return {Object} record ที่เขียนจริง พร้อม _rowIndex
+ */
+function appendRecordUnlocked_(sheetName, record) {
+  var sheet = getSheetByName_(sheetName);
+  var headers = getHeaderRow_(sheet);
+  var row = recordToRow_(headers, record);
+  var rowIndex = sheet.getLastRow() + 1;
+  ensureRowCapacity_(sheet, sheetName, rowIndex, 1);   // ต้องมาก่อน setValues เสมอ (format ก่อนค่า)
+  sheet.getRange(rowIndex, 1, 1, headers.length).setValues([row]);
+  return rowToRecord_(headers, row, rowIndex);
 }
 
 /**
@@ -219,17 +229,20 @@ function appendRecords_(sheetName, records) {
  * @return {Object} record ใหม่หลังแก้ไข
  */
 function updateRecord_(sheetName, rowIndex, patch) {
-  return withSheetLock_(function () {
-    var sheet = getSheetByName_(sheetName);
-    var headers = getHeaderRow_(sheet);
-    var current = sheet.getRange(rowIndex, 1, 1, headers.length).getValues()[0];
-    var currentRecord = rowToRecord_(headers, current, rowIndex);
-    var merged = Object.assign({}, currentRecord, patch);
-    delete merged._rowIndex;
-    var newRow = recordToRow_(headers, merged);
-    sheet.getRange(rowIndex, 1, 1, headers.length).setValues([newRow]);
-    return rowToRecord_(headers, newRow, rowIndex);
-  });
+  return withSheetLock_(function () { return updateRecordUnlocked_(sheetName, rowIndex, patch); });
+}
+
+/** เหมือน updateRecord_ ทุกประการ แต่ "ไม่" ขอ lock เอง — ดูคำเตือนที่ appendRecordUnlocked_ */
+function updateRecordUnlocked_(sheetName, rowIndex, patch) {
+  var sheet = getSheetByName_(sheetName);
+  var headers = getHeaderRow_(sheet);
+  var current = sheet.getRange(rowIndex, 1, 1, headers.length).getValues()[0];
+  var currentRecord = rowToRecord_(headers, current, rowIndex);
+  var merged = Object.assign({}, currentRecord, patch);
+  delete merged._rowIndex;
+  var newRow = recordToRow_(headers, merged);
+  sheet.getRange(rowIndex, 1, 1, headers.length).setValues([newRow]);
+  return rowToRecord_(headers, newRow, rowIndex);
 }
 
 /**
@@ -275,13 +288,26 @@ function batchUpdateRecords_(sheetName, updates) {
  * @return {Object}
  */
 function upsertByKey_(sheetName, keyColumn, keyValue, patch) {
+  return withSheetLock_(function () { return upsertByKeyUnlocked_(sheetName, keyColumn, keyValue, patch); });
+}
+
+/**
+ * เหมือน upsertByKey_ ทุกประการ แต่ "ไม่" ขอ lock เอง — ใช้เมื่อผู้เรียกต้องทำ read-then-write เป็นก้อนเดียว
+ * ภายใต้ lock เดียวกัน (ดูคำเตือนที่ appendRecordUnlocked_)
+ * @param {string} sheetName
+ * @param {string} keyColumn
+ * @param {*} keyValue
+ * @param {Object} patch
+ * @return {Object}
+ */
+function upsertByKeyUnlocked_(sheetName, keyColumn, keyValue, patch) {
   var existing = findRecordByKey_(sheetName, keyColumn, keyValue);
   if (existing) {
-    return updateRecord_(sheetName, existing._rowIndex, patch);
+    return updateRecordUnlocked_(sheetName, existing._rowIndex, patch);
   }
   var record = Object.assign({}, patch);
   record[keyColumn] = keyValue;
-  return appendRecord_(sheetName, record);
+  return appendRecordUnlocked_(sheetName, record);
 }
 
 /**
