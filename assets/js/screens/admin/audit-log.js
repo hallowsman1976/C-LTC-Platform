@@ -26,7 +26,7 @@ export async function renderAdminAuditLog(content) {
       <h1 class="text-lg font-bold text-slate-800 mb-1">Audit Log</h1>
       <p class="text-xs text-slate-400 mb-4">ประวัติการกระทำทั้งหมดในระบบ เรียงใหม่สุดก่อน</p>
 
-      <div class="bg-white rounded-2xl shadow-sm p-3 mb-4 space-y-2">
+      <div class="shadow-soft bg-white rounded-2xl p-3 mb-4 space-y-2">
         <div class="grid grid-cols-2 gap-2">
           <input id="al-action" type="text" placeholder="การกระทำ (เช่น users.update)"
             class="px-3 py-2 rounded-xl border border-slate-200 text-xs focus:outline-none focus:ring-2 focus:ring-sky-500" />
@@ -87,7 +87,7 @@ export async function renderAdminAuditLog(content) {
     // จึงแค่สร้าง markup 2 ชุดแล้วสลับด้วย CSS breakpoint โดยไม่ต้อง sync state ระหว่างกันเหมือนหน้ามอบหมายทีมดูแล
     resultsEl.innerHTML = `
       <div class="md:hidden">${data.items.map((row) => mobileLogRowHtml(row, userMap)).join('')}</div>
-      <div class="hidden md:block bg-white rounded-2xl shadow-sm overflow-hidden">
+      <div class="hidden md:block shadow-soft bg-white rounded-2xl overflow-hidden">
         <table class="w-full text-sm">
           <thead>
             <tr class="border-b border-slate-100 text-xs text-slate-400 text-left">
@@ -149,7 +149,7 @@ function endOfDayIso(isoDate) {
 function mobileLogRowHtml(row, userMap) {
   const actor = userMap[row.UserId];
   return `
-    <div class="bg-white rounded-2xl shadow-sm p-3 mb-2">
+    <div class="shadow-soft bg-white rounded-2xl p-3 mb-2">
       <div class="flex items-start justify-between gap-2">
         <div class="min-w-0">
           <p class="text-sm font-medium text-slate-800 break-all">${escapeHtml(row.Action || '-')}</p>

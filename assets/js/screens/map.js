@@ -21,7 +21,7 @@ export async function renderMap(content) {
     <div class="px-4 py-5 max-w-4xl mx-auto">
       <h1 class="text-lg font-bold text-slate-800 mb-1">แผนที่ผู้ป่วย</h1>
       <p class="text-xs text-slate-400 mb-4">ตำแหน่งจากการเยี่ยมบ้านครั้งล่าสุดของผู้ป่วยแต่ละราย</p>
-      <div id="map-container" class="rounded-2xl overflow-hidden shadow-sm mb-4" style="height:420px"></div>
+      <div id="map-container" class="shadow-soft rounded-2xl overflow-hidden mb-4" style="height:420px"></div>
       <div id="map-missing-list"></div>
     </div>
   `;
@@ -95,7 +95,7 @@ function renderMissingList(container, patients) {
     return;
   }
   container.innerHTML = `
-    <div class="bg-white rounded-2xl shadow-sm p-4">
+    <div class="shadow-soft animate-rise-in bg-white rounded-2xl p-4">
       <p class="text-sm font-semibold text-slate-700 mb-1">ผู้ป่วยที่ยังไม่มีพิกัดบนแผนที่ (${patients.length} ราย)</p>
       <p class="text-xs text-slate-400 mb-3">จะขึ้นแผนที่อัตโนมัติหลังบันทึกการเยี่ยมบ้านพร้อมเปิด GPS อย่างน้อย 1 ครั้ง</p>
       <div class="divide-y divide-slate-50">

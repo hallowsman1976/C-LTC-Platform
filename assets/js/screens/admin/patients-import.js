@@ -106,7 +106,7 @@ export async function renderAdminPatientsImport(content) {
         อัปโหลดไฟล์ CSV เพื่อเพิ่มผู้ป่วยหลายรายพร้อมกัน — ไม่รวมมอบหมายทีมดูแล (ทำที่หน้า "มอบหมายทีมดูแล" หลังนำเข้าแล้ว)
       </p>
 
-      <div class="bg-white rounded-2xl shadow-sm p-4 mb-4">
+      <div class="shadow-soft bg-white rounded-2xl p-4 mb-4">
         <p class="text-sm font-semibold text-slate-700 mb-2">1. ดาวน์โหลดไฟล์ต้นแบบ</p>
         <p class="text-xs text-slate-400 mb-3">กรอกข้อมูลตามหัวคอลัมน์ในไฟล์ แล้วบันทึกเป็น CSV ก่อนอัปโหลดกลับมาที่นี่</p>
         <button id="pi-download-template" type="button" class="w-full py-2.5 rounded-xl bg-slate-100 text-slate-600 text-sm font-medium">
@@ -114,7 +114,7 @@ export async function renderAdminPatientsImport(content) {
         </button>
       </div>
 
-      <div class="bg-white rounded-2xl shadow-sm p-4 mb-4">
+      <div class="shadow-soft bg-white rounded-2xl p-4 mb-4">
         <p class="text-sm font-semibold text-slate-700 mb-2">2. อัปโหลดไฟล์ที่กรอกแล้ว</p>
         <label class="flex flex-col items-center justify-center h-24 border-2 border-dashed border-slate-200 rounded-xl cursor-pointer text-slate-400 text-xs">
           <span class="text-2xl mb-1">📄</span>แตะเพื่อเลือกไฟล์ CSV
@@ -196,7 +196,7 @@ export async function renderAdminPatientsImport(content) {
         <span class="text-sky-400">(ระบบจะตรวจซ้ำอีกครั้งตอนนำเข้าจริง)</span>
       </div>
       <div class="md:hidden">${rows.map((r, i) => mobilePreviewRowHtml(r, hints[i], i + 1)).join('')}</div>
-      <div class="hidden md:block bg-white rounded-2xl shadow-sm overflow-hidden mb-4">
+      <div class="hidden md:block shadow-soft bg-white rounded-2xl overflow-hidden mb-4">
         <table class="w-full text-sm">
           <thead>
             <tr class="border-b border-slate-100 text-xs text-slate-400 text-left">
@@ -252,13 +252,13 @@ export async function renderAdminPatientsImport(content) {
   function renderResult(result) {
     const failed = result.results.filter((r) => !r.ok);
     resultEl.innerHTML = `
-      <div class="bg-white rounded-2xl shadow-sm p-4 mb-4">
+      <div class="shadow-soft bg-white rounded-2xl p-4 mb-4">
         <p class="text-sm font-semibold text-slate-700 mb-1">ผลการนำเข้า</p>
         <p class="text-sm text-emerald-600">สำเร็จ ${result.createdCount} รายการ</p>
         ${result.failedCount > 0 ? `<p class="text-sm text-rose-600 mt-1">ล้มเหลว ${result.failedCount} รายการ</p>` : ''}
       </div>
       ${failed.length > 0 ? `
-        <div class="bg-white rounded-2xl shadow-sm p-4 mb-4">
+        <div class="shadow-soft bg-white rounded-2xl p-4 mb-4">
           <div class="flex items-center justify-between mb-2 gap-2">
             <p class="text-sm font-semibold text-slate-700">แถวที่ล้มเหลว</p>
             <button id="pi-download-failed" type="button" class="text-xs text-sky-600 font-medium shrink-0">ดาวน์โหลดแถวที่ล้มเหลว</button>
@@ -294,7 +294,7 @@ export async function renderAdminPatientsImport(content) {
 /** @param {Object} mapped @param {string|null} hint @param {number} rowNum @return {string} */
 function mobilePreviewRowHtml(mapped, hint, rowNum) {
   return `
-    <div class="bg-white rounded-2xl shadow-sm p-3 mb-2">
+    <div class="shadow-soft bg-white rounded-2xl p-3 mb-2">
       <div class="flex items-start justify-between gap-2">
         <div class="min-w-0">
           <p class="text-sm font-medium text-slate-800 truncate">${escapeHtml(mapped.name || '(ไม่มีชื่อ)')}</p>

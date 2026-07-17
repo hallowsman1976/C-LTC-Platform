@@ -38,7 +38,7 @@ function statusLabel(status) {
 function mobileNotificationRowHtml(n, userMap) {
   const recipient = userMap[n.recipientUserId];
   return `
-    <div class="bg-white rounded-2xl shadow-sm p-4 mb-3">
+    <div class="shadow-soft bg-white rounded-2xl p-4 mb-3">
       <div class="flex items-start justify-between gap-2">
         <div class="min-w-0">
           <p class="text-sm text-slate-800">${escapeHtml(n.message)}</p>
@@ -91,7 +91,7 @@ export async function renderAdminNotifications(content) {
       <h1 class="text-lg font-bold text-slate-800 mb-1">การแจ้งเตือน</h1>
       <p class="text-xs text-slate-400 mb-4">สถานะการส่งแจ้งเตือน LINE ทั้งหมด เรียงใหม่สุดก่อน</p>
 
-      <div class="bg-white rounded-2xl shadow-sm p-3 mb-4">
+      <div class="shadow-soft bg-white rounded-2xl p-3 mb-4">
         <select id="an-status" class="w-full px-2 py-2 rounded-xl border border-slate-200 text-xs bg-white focus:outline-none focus:ring-2 focus:ring-sky-500">
           <option value="">ทุกสถานะ</option>
           ${STATUS_OPTIONS.map((s) => `<option value="${escapeHtml(s.value)}">${escapeHtml(s.label)}</option>`).join('')}
@@ -131,7 +131,7 @@ export async function renderAdminNotifications(content) {
     // CSS breakpoint ตรง ๆ ไม่ต้อง sync state ระหว่างกันเหมือนหน้ามอบหมายทีมดูแล
     resultsEl.innerHTML = `
       <div class="md:hidden">${data.items.map((n) => mobileNotificationRowHtml(n, userMap)).join('')}</div>
-      <div class="hidden md:block bg-white rounded-2xl shadow-sm overflow-hidden">
+      <div class="hidden md:block shadow-soft bg-white rounded-2xl overflow-hidden">
         <table class="w-full text-sm">
           <thead>
             <tr class="border-b border-slate-100 text-xs text-slate-400 text-left">
