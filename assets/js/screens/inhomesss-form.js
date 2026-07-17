@@ -167,7 +167,7 @@ export function renderInhomesssStep(answers, stepIndex) {
         ${visibleFields(domain, domainAnswers).map((field) => renderEditableField(domain, field, domainAnswers[field.key])).join('')}
       </div>
     `)}
-    <div class="flex gap-2 mt-3">
+    <div class="flex gap-2 mt-3 mb-4">
       <button type="button" data-ih-prev class="flex-1 py-2.5 rounded-xl bg-slate-100 text-slate-600 text-sm font-medium disabled:opacity-40" ${stepIndex === 0 ? 'disabled' : ''}>← มิติก่อนหน้า</button>
       <button type="button" data-ih-next class="flex-1 py-2.5 rounded-xl bg-sky-600 text-white text-sm font-medium disabled:opacity-40" ${stepIndex === total - 1 ? 'disabled' : ''}>มิติถัดไป →</button>
     </div>
