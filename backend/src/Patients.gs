@@ -70,10 +70,29 @@ function computeAge_(birthDateStr) {
 }
 
 /**
+ * หาชื่อผู้ใช้จาก userId — ใช้ userNameMap ที่เตรียมไว้ล่วงหน้าถ้ามี (กัน N+1 sheet read ตอน sanitize
+ * ผู้ป่วยหลายคนใน listPatients) ไม่มีก็ค้นเดี่ยว ๆ (ใช้ตอน sanitize ผู้ป่วยทีละคนใน getPatient/createPatient ฯลฯ)
+ *
+ * เดิม CG/CM name resolve ฝั่ง frontend ผ่าน directory.js (getUserDirectoryMap) ซึ่งคืนค่าว่างเปล่าเสมอถ้า
+ * ผู้เรียกไม่ใช่ ADMIN (admin.users.list เปิดให้ ADMIN เท่านั้น) — ทำให้ CM/CG ซึ่งเป็นผู้ใช้หลักของหน้า
+ * รายละเอียดผู้ป่วยเห็นแต่ userId ดิบแทนชื่อจริง จึงย้ายมา resolve ที่นี่แทนให้ทุก role เห็นชื่อถูกต้อง
+ * @param {string} userId
+ * @param {Object=} userNameMap userId → name
+ * @return {string} ชื่อผู้ใช้ หรือค่าว่างถ้าไม่พบ/ไม่ได้ระบุ userId
+ */
+function resolveUserName_(userId, userNameMap) {
+  if (!isNonEmptyString_(userId)) return '';
+  if (userNameMap) return userNameMap[userId] || '';
+  var user = findRecordByKey_(SHEET_NAMES.USERS, 'UserId', userId);
+  return user ? user.Name : '';
+}
+
+/**
  * แปลง record ผู้ป่วยดิบ → รูปแบบปลอดภัยสำหรับส่งให้ client
  * @param {Object} patientRecord
  * @param {Object} callerUser
- * @param {{forceMask: boolean}=} options forceMask=true บังคับ mask CID เสมอ (ใช้ใน list), false ให้ mask เฉพาะ VIEWER
+ * @param {{forceMask: boolean, userNameMap: Object=}=} options forceMask=true บังคับ mask CID เสมอ (ใช้ใน list),
+ *        false ให้ mask เฉพาะ VIEWER — userNameMap ส่งมาจาก listPatients เพื่ออ่าน Users ครั้งเดียวสำหรับทั้งหน้า
  * @return {Object}
  */
 function sanitizePatientForClient_(patientRecord, callerUser, options) {
@@ -98,7 +117,9 @@ function sanitizePatientForClient_(patientRecord, callerUser, options) {
     adlScore: patientRecord.AdlScore || 0,
     riskLevel: patientRecord.RiskLevel || '',
     primaryCgUserId: patientRecord.PrimaryCgUserId || '',
+    primaryCgName: resolveUserName_(patientRecord.PrimaryCgUserId, options.userNameMap),
     responsibleCmUserId: patientRecord.ResponsibleCmUserId || '',
+    responsibleCmName: resolveUserName_(patientRecord.ResponsibleCmUserId, options.userNameMap),
     status: patientRecord.Status,
     nextVisitDate: patientRecord.NextVisitDate || '',
     isDeleted: coerceBoolean_(patientRecord.IsDeleted),
@@ -511,8 +532,14 @@ function listPatients(payload, callerUser) {
 
   var total = visible.length;
   var start = (page - 1) * pageSize;
-  var items = visible.slice(start, start + pageSize).map(function (p) {
-    return sanitizePatientForClient_(p, callerUser, { forceMask: true });
+  var pageItems = visible.slice(start, start + pageSize);
+
+  // อ่าน Users ครั้งเดียวมาทำ map ชื่อ CG/CM แทนให้ sanitizePatientForClient_ ค้นทีละคน (กัน N+1 sheet read)
+  var userNameMap = {};
+  readAllRecords_(SHEET_NAMES.USERS).records.forEach(function (u) { userNameMap[u.UserId] = u.Name; });
+
+  var items = pageItems.map(function (p) {
+    return sanitizePatientForClient_(p, callerUser, { forceMask: true, userNameMap: userNameMap });
   });
 
   return ok_({ total: total, page: page, pageSize: pageSize, items: items });

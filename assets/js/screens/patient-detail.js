@@ -6,7 +6,7 @@
 import { apiCall } from '../api.js';
 import { hasRole } from '../auth.js';
 import { renderCardSkeleton, renderListSkeleton, renderEmptyState, showToast, confirmDialog, escapeHtml } from '../ui.js';
-import { getUserDirectoryMap } from '../directory.js';
+import { formatThaiDateDisplay } from '../date-picker.js';
 import { riskBadgeClass, statusBadgeClass } from '../constants.js';
 
 /**
@@ -32,14 +32,13 @@ export async function renderPatientDetail(content, params) {
   renderCardSkeleton(headerEl);
   renderListSkeleton(visitsEl, 3);
 
-  const [patientData, visitsData, directoryMap] = await Promise.all([
+  const [patientData, visitsData] = await Promise.all([
     apiCall('patients.get', { patientId }),
-    apiCall('visits.listByPatient', { patientId, pageSize: 10 }),
-    getUserDirectoryMap()
+    apiCall('visits.listByPatient', { patientId, pageSize: 10 })
   ]);
 
   const patient = patientData.patient;
-  renderHeader(headerEl, patient, directoryMap);
+  renderHeader(headerEl, patient);
   renderActions(actionsEl, patient);
   renderVisits(visitsEl, visitsData.items);
 
@@ -63,16 +62,12 @@ export async function renderPatientDetail(content, params) {
 
 /**
  * @param {HTMLElement} container
- * @param {Object} patient
- * @param {Object} directoryMap userId → user (ว่างเปล่าถ้าไม่ใช่ ADMIN)
+ * @param {Object} patient patients.get คืน primaryCgName/responsibleCmName resolved มาให้แล้ว (ทุก role เห็นชื่อ
+ *        จริงได้ ไม่ต้องพึ่ง directory.js ที่คืนค่าว่างเปล่าถ้าไม่ใช่ ADMIN — ดูคอมเมนต์ resolveUserName_ ฝั่ง backend)
  */
-function renderHeader(container, patient, directoryMap) {
-  const cgName = patient.primaryCgUserId
-    ? (directoryMap[patient.primaryCgUserId] ? directoryMap[patient.primaryCgUserId].name : patient.primaryCgUserId)
-    : 'ยังไม่มอบหมาย';
-  const cmName = patient.responsibleCmUserId
-    ? (directoryMap[patient.responsibleCmUserId] ? directoryMap[patient.responsibleCmUserId].name : patient.responsibleCmUserId)
-    : 'ยังไม่มอบหมาย';
+function renderHeader(container, patient) {
+  const cgName = patient.primaryCgUserId ? (patient.primaryCgName || patient.primaryCgUserId) : 'ยังไม่มอบหมาย';
+  const cmName = patient.responsibleCmUserId ? (patient.responsibleCmName || patient.responsibleCmUserId) : 'ยังไม่มอบหมาย';
 
   container.innerHTML = `
     ${patient.isDeleted ? '<div class="bg-amber-50 text-amber-700 text-xs rounded-xl px-3 py-2 mb-3">ผู้ป่วยรายนี้ถูกเก็บเข้าคลังแล้ว</div>' : ''}
@@ -87,7 +82,7 @@ function renderHeader(container, patient, directoryMap) {
 
       <div class="grid grid-cols-2 gap-3 mt-4 text-sm">
         <div><p class="text-xs text-slate-400">เพศ / อายุ</p><p class="text-slate-700">${escapeHtml(patient.gender)} · ${patient.age ?? '-'} ปี</p></div>
-        <div><p class="text-xs text-slate-400">วันนัดเยี่ยมถัดไป</p><p class="text-slate-700">${escapeHtml(patient.nextVisitDate || '-')}</p></div>
+        <div><p class="text-xs text-slate-400">วันนัดเยี่ยมถัดไป</p><p class="text-slate-700">${escapeHtml(formatThaiDateDisplay(patient.nextVisitDate))}</p></div>
         <div class="col-span-2"><p class="text-xs text-slate-400">ที่อยู่</p><p class="text-slate-700">${escapeHtml([patient.village, patient.tambon, patient.amphoe, patient.changwat].filter(Boolean).join(' '))}</p></div>
         <div><p class="text-xs text-slate-400">ผู้ดูแลหลัก (CG)</p><p class="text-slate-700">${escapeHtml(cgName)}</p></div>
         <div><p class="text-xs text-slate-400">Case Manager (CM)</p><p class="text-slate-700">${escapeHtml(cmName)}</p></div>
