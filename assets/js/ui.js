@@ -97,10 +97,10 @@ export function escapeHtml(str) {
 export function renderListSkeleton(container, count = 5) {
   if (!container) return;
   container.innerHTML = Array.from({ length: count }).map(() => `
-    <div class="bg-white rounded-2xl shadow-sm p-4 mb-3 animate-pulse">
-      <div class="h-4 bg-slate-200 rounded w-2/3 mb-2"></div>
-      <div class="h-3 bg-slate-200 rounded w-1/3 mb-1.5"></div>
-      <div class="h-3 bg-slate-200 rounded w-1/4"></div>
+    <div class="bg-white rounded-2xl shadow-sm p-4 mb-3">
+      <div class="h-4 skeleton-shimmer rounded w-2/3 mb-2"></div>
+      <div class="h-3 skeleton-shimmer rounded w-1/3 mb-1.5"></div>
+      <div class="h-3 skeleton-shimmer rounded w-1/4"></div>
     </div>
   `).join('');
 }
@@ -112,11 +112,11 @@ export function renderListSkeleton(container, count = 5) {
 export function renderCardSkeleton(container) {
   if (!container) return;
   container.innerHTML = `
-    <div class="bg-white rounded-2xl shadow-sm p-4 animate-pulse space-y-3">
-      <div class="h-5 bg-slate-200 rounded w-1/2"></div>
-      <div class="h-3 bg-slate-200 rounded w-full"></div>
-      <div class="h-3 bg-slate-200 rounded w-5/6"></div>
-      <div class="h-3 bg-slate-200 rounded w-2/3"></div>
+    <div class="bg-white rounded-2xl shadow-sm p-4 space-y-3">
+      <div class="h-5 skeleton-shimmer rounded w-1/2"></div>
+      <div class="h-3 skeleton-shimmer rounded w-full"></div>
+      <div class="h-3 skeleton-shimmer rounded w-5/6"></div>
+      <div class="h-3 skeleton-shimmer rounded w-2/3"></div>
     </div>
   `;
 }
