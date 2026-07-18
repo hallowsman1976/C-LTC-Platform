@@ -39,85 +39,45 @@ nav.app-bottom-nav {
 
 /**
  * ==========================================================================
- * Design system เสริม (Phase: premium visual pass) — เริ่มที่ Dashboard ก่อน
- * แนวคิด: โทนสีน้ำ/สุขภาพเดิมของแอป (sky-600) ยกระดับเป็น gradient น้ำเงินเข้ม→เขียวมิ้นต์
- * (เชื่อมโยงกับธีม "น้ำ/สุขภาพ" ของ LTC ตรง ๆ แทนไล่สีม่วง-น้ำเงินทั่วไป) shadow ทุกชั้นแต้มสีฟ้าอ่อน
- * แทนสีดำล้วน ให้ดู "ตั้งใจ" มากกว่าเงาเริ่มต้น — ใช้เฉพาะหน้าที่เน้นความสวยงาม (Dashboard) ก่อน
- * ส่วนฟอร์มกรอกข้อมูลทางคลินิก (เยี่ยมบ้าน/แบบประเมิน) คงดีไซน์เดิมไว้เพื่อความชัดเจนในการอ่าน
+ * Design system เสริม (Phase: flat/minimal accent pass — mirror จาก aitmpl.com/featured/brightdata)
+ * แทนที่ระบบ glassmorphism/gradient เดิมทั้งชุด ด้วยแนวทางแบน เส้นขอบบาง ไม่มีเงา ตามต้นแบบที่เลือก
+ * (การ์ดพื้นเรียบขอบ 1px, ปุ่ม/แถบเน้นไล่สีแนวนอนบาง ๆ) สีเน้น (accent) ตั้งใจเลื่อนจากโทนส้ม/แดง
+ * ของต้นแบบมาเป็นน้ำเงินอินดิโก้แทน เพื่อให้ห่างจากโทนสีที่แอปใช้สื่อความเสี่ยงทางคลินิกอยู่แล้ว
+ * (riskBadgeClass/statusBadgeClass: emerald/amber/orange/rose) กันปุ่ม/ลิงก์ทั่วไปแย่งความสนใจ
+ * ไปจากป้ายแจ้งเตือนที่ต้องรีบสังเกต (เช่น "ความเสี่ยงสูงมาก", "เลยนัด")
  * ==========================================================================
  */
 :root {
-  --ltc-accent-1: #0b5fa8;   /* น้ำเงินเข้ม (ความน่าเชื่อถือ) */
-  --ltc-accent-2: #14b8a6;   /* เขียวมิ้นต์ (สุขภาพ/ความสดชื่น) */
-  --ltc-shadow-tint: 11, 95, 168; /* rgb ของ --ltc-accent-1 ไว้ผสมกับ alpha ใน shadow */
+  --ltc-accent: #3e63dd;        /* น้ำเงินอินดิโก้ — สีเน้นหลัก */
+  --ltc-accent-dark: #2f4eb8;   /* เข้มขึ้นสำหรับ gradient sweep/hover */
+  --ltc-border: #e5e5e5;        /* เส้นขอบการ์ด/ป้าย ตามต้นแบบ */
 }
 
-/* เงานุ่มหลายชั้นแต้มสีฟ้าอ่อนแทนสีดำล้วน (แทน shadow-sm ตายตัวของ Tailwind) */
-.shadow-soft {
-  box-shadow:
-    0 1px 2px rgba(15, 23, 42, 0.04),
-    0 8px 24px -8px rgba(var(--ltc-shadow-tint), 0.16),
-    0 20px 44px -20px rgba(var(--ltc-shadow-tint), 0.14);
+/* การ์ดแบน ขอบบาง ไม่มีเงา (แทน .shadow-soft เดิม) */
+.flat-card {
+  border: 1px solid var(--ltc-border);
 }
 
-.shadow-soft-interactive {
-  transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.22s ease-out;
+.flat-card-interactive {
+  transition: border-color 0.15s ease-out;
 }
-.shadow-soft-interactive:hover {
-  transform: translateY(-3px);
-  box-shadow:
-    0 2px 4px rgba(15, 23, 42, 0.05),
-    0 14px 32px -10px rgba(var(--ltc-shadow-tint), 0.24),
-    0 26px 52px -18px rgba(var(--ltc-shadow-tint), 0.18);
+.flat-card-interactive:hover {
+  border-color: var(--ltc-accent);
 }
 @media (prefers-reduced-motion: reduce) {
-  .shadow-soft-interactive { transition: none; }
-  .shadow-soft-interactive:hover { transform: none; }
+  .flat-card-interactive { transition: none; }
 }
 
-/* กระจกฝ้า (glassmorphism) — ใช้เฉพาะจุดที่ลอยทับพื้นสี/gradient เท่านั้น ไม่ใช่บนพื้นขาวเรียบ (จะมองไม่เห็นผล) */
-.glass {
-  background: rgba(255, 255, 255, 0.16);
-  border: 1px solid rgba(255, 255, 255, 0.28);
-  backdrop-filter: blur(16px) saturate(150%);
-  -webkit-backdrop-filter: blur(16px) saturate(150%);
-}
-.glass-light {
-  background: rgba(255, 255, 255, 0.72);
-  border: 1px solid rgba(255, 255, 255, 0.6);
-  backdrop-filter: blur(20px) saturate(160%);
-  -webkit-backdrop-filter: blur(20px) saturate(160%);
-}
-/* เบราว์เซอร์ที่ไม่รองรับ backdrop-filter (เช่น เบราว์เซอร์เก่าบนมือถือบางรุ่น) — ตกลงมาเป็นพื้นทึบอ่านง่ายแทน กันข้อความจมหายไปกับพื้นหลัง */
-@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
-  .glass { background: rgba(255, 255, 255, 0.92); }
-  .glass-light { background: rgba(255, 255, 255, 0.96); }
+/* ป้าย/badge พื้นเทาอ่อนขอบบาง (แทน .glass เดิมที่ใช้ทับพื้น gradient) */
+.flat-badge {
+  background: #f5f5f5;
+  border: 1px solid var(--ltc-border);
+  color: #525252;
 }
 
-/* Panel ไล่สีหลัก — บล็อบเบลอด้านหลังให้ความลึกแบบไม่ต้องพึ่งภาพประกอบสำเร็จรูป */
-.gradient-hero {
-  position: relative;
-  overflow: hidden;
-  background: linear-gradient(135deg, var(--ltc-accent-1) 0%, var(--ltc-accent-2) 100%);
-  isolation: isolate;
-}
-.gradient-hero::before,
-.gradient-hero::after {
-  content: '';
-  position: absolute;
-  border-radius: 999px;
-  filter: blur(36px);
-  z-index: -1;
-}
-.gradient-hero::before {
-  width: 220px; height: 220px;
-  background: rgba(255, 255, 255, 0.22);
-  top: -70px; right: -50px;
-}
-.gradient-hero::after {
-  width: 280px; height: 280px;
-  background: rgba(5, 46, 77, 0.35);
-  bottom: -120px; left: -60px;
+/* แถบ/ปุ่มเน้น ไล่สีแนวนอนบาง ๆ ตามต้นแบบ (แทน .gradient-hero เดิม) */
+.accent-gradient {
+  background-image: linear-gradient(to right, var(--ltc-accent) 0%, var(--ltc-accent-dark) 50%, var(--ltc-accent) 100%);
 }
 
 /* Skeleton โหลดข้อมูลแบบ shimmer (แทน animate-pulse ตายตัว) — ใช้ทั่วแอปผ่าน renderListSkeleton/renderCardSkeleton */

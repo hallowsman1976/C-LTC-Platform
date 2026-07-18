@@ -33,7 +33,7 @@ export async function renderAssessmentsHub(content) {
       <h1 class="text-lg font-bold text-slate-800 mb-1">แบบประเมิน</h1>
       <p class="text-xs text-slate-400 mb-4">เลือกผู้ป่วยที่ต้องการประเมิน แล้วจึงเลือกชนิดแบบประเมิน</p>
 
-      <div class="shadow-soft bg-white rounded-2xl p-3 mb-4">
+      <div class="flat-card bg-white rounded-2xl p-3 mb-4">
         <input id="ah-search" type="text" placeholder="ค้นหาชื่อ, HN, หมู่บ้าน หรือเลขบัตร 13 หลัก"
           class="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500" />
       </div>
@@ -61,7 +61,7 @@ export async function renderAssessmentsHub(content) {
     }
 
     resultsEl.innerHTML = data.items.map((p, i) => `
-      <a href="#/assessments/${encodeURIComponent(p.patientId)}" class="shadow-soft shadow-soft-interactive animate-rise-in block bg-white rounded-2xl p-4 mb-3 active:bg-slate-50" style="--delay:${Math.min(i, 8) * 40}ms">
+      <a href="#/assessments/${encodeURIComponent(p.patientId)}" class="flat-card flat-card-interactive animate-rise-in block bg-white rounded-2xl p-4 mb-3 active:bg-slate-50" style="--delay:${Math.min(i, 8) * 40}ms">
         <div class="flex items-start justify-between gap-2">
           <div class="min-w-0">
             <p class="text-sm font-semibold text-slate-800 truncate">${escapeHtml(p.name)}</p>
@@ -119,7 +119,7 @@ export async function renderPatientAssessments(content, params) {
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6">
         ${Object.entries(ASSESSMENT_DEFS).map(([type, def], i) => `
           <a href="#/assessments/${encodeURIComponent(params.patientId)}/${encodeURIComponent(type)}"
-            class="shadow-soft shadow-soft-interactive animate-rise-in block bg-white rounded-2xl p-4 active:bg-slate-50" style="--delay:${i * 50}ms">
+            class="flat-card flat-card-interactive animate-rise-in block bg-white rounded-2xl p-4 active:bg-slate-50" style="--delay:${i * 50}ms">
             <p class="text-sm font-semibold text-slate-800">${escapeHtml(def.title)}</p>
             <p class="text-xs text-slate-400 mt-1">${escapeHtml(def.subtitle)}</p>
           </a>
@@ -156,7 +156,7 @@ export async function renderPatientAssessments(content, params) {
 
     historyEl.innerHTML = result.items.map((item, i) => `
       <a href="#/assessments/${encodeURIComponent(params.patientId)}/${encodeURIComponent(item.type)}/${encodeURIComponent(item.assessmentId)}"
-        class="shadow-soft shadow-soft-interactive animate-rise-in block bg-white rounded-2xl p-4 mb-3 active:bg-slate-50" style="--delay:${Math.min(i, 8) * 40}ms">
+        class="flat-card flat-card-interactive animate-rise-in block bg-white rounded-2xl p-4 mb-3 active:bg-slate-50" style="--delay:${Math.min(i, 8) * 40}ms">
         <div class="flex items-start justify-between gap-2">
           <div class="min-w-0">
             <p class="text-sm font-semibold text-slate-800">${escapeHtml(assessmentTitle(item.type))}</p>

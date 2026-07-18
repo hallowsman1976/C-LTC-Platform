@@ -25,7 +25,7 @@ export async function renderAdminHub(content) {
       <p class="text-xs text-slate-400 mb-4">เมนูสำหรับ ADMIN เท่านั้น</p>
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
         ${ADMIN_SECTIONS.map((s, i) => `
-          <a href="${escapeHtml(s.href)}" class="shadow-soft shadow-soft-interactive animate-rise-in block bg-white rounded-2xl p-4 active:bg-slate-50" style="--delay:${i * 50}ms">
+          <a href="${escapeHtml(s.href)}" class="flat-card flat-card-interactive animate-rise-in block bg-white rounded-2xl p-4 active:bg-slate-50" style="--delay:${i * 50}ms">
             <p class="text-sm font-semibold text-slate-800">${escapeHtml(s.title)}</p>
             <p class="text-xs text-slate-400 mt-1">${escapeHtml(s.desc)}</p>
           </a>
