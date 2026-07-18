@@ -5,7 +5,7 @@
  */
 import { apiCall } from '../api.js';
 import { hasRole } from '../auth.js';
-import { renderCardSkeleton, renderEmptyState, showToast, confirmDialog, promptDialog, escapeHtml } from '../ui.js';
+import { renderCardSkeleton, renderEmptyState, renderBreadcrumb, showToast, confirmDialog, promptDialog, escapeHtml } from '../ui.js';
 import { initThaiAppointmentDatePicker, formatThaiDateDisplay } from '../date-picker.js';
 import { carePlanStatusLabel, carePlanStatusBadgeClass } from '../constants.js';
 
@@ -20,16 +20,22 @@ export async function renderCarePlan(content, params) {
 
   content.innerHTML = `
     <div class="px-4 py-5 max-w-2xl mx-auto">
-      <a href="#/patients/${encodeURIComponent(patientId)}" class="text-sm text-sky-600 mb-3 inline-block">← กลับไปรายละเอียดผู้ป่วย</a>
+      <div id="cp-breadcrumb"></div>
       <div id="cp-patient-header"></div>
       <div class="flex items-center justify-between mt-4 mb-3">
         <h1 class="text-lg font-bold text-slate-800">แผนการดูแล (Care Plan)</h1>
-        ${canEditPlans ? '<button id="cp-new-btn" type="button" class="px-3 py-2 rounded-xl bg-sky-600 text-white text-sm font-medium">+ สร้างแผนใหม่</button>' : ''}
+        ${canEditPlans ? '<button id="cp-new-btn" type="button" class="px-3 py-2 rounded-xl accent-gradient text-white text-sm font-medium">+ สร้างแผนใหม่</button>' : ''}
       </div>
       <div id="cp-new-form-slot"></div>
       <div id="cp-list"></div>
     </div>
   `;
+
+  renderBreadcrumb(content.querySelector('#cp-breadcrumb'), [
+    { label: 'ผู้ป่วย', href: '#/patients' },
+    { label: 'รายละเอียด', href: `#/patients/${encodeURIComponent(patientId)}` },
+    { label: 'Care Plan' }
+  ]);
 
   const patientHeaderEl = content.querySelector('#cp-patient-header');
   const listEl = content.querySelector('#cp-list');
@@ -41,7 +47,7 @@ export async function renderCarePlan(content, params) {
   async function loadPatientHeader() {
     const data = await apiCall('patients.get', { patientId });
     patientHeaderEl.innerHTML = `
-      <div class="bg-white rounded-2xl shadow-sm p-4">
+      <div class="flat-card bg-white rounded-2xl p-4">
         <p class="text-sm font-semibold text-slate-800">${escapeHtml(data.patient.name)}</p>
         <p class="text-xs text-slate-400">HN ${escapeHtml(data.patient.hn)}</p>
       </div>
@@ -116,7 +122,7 @@ function renderPlanCard(slot, plan, ctx) {
   const safeId = cssEscapeId(plan.carePlanId);
 
   slot.innerHTML = `
-    <div class="bg-white rounded-2xl shadow-sm p-4">
+    <div class="flat-card bg-white rounded-2xl p-4">
       <div class="flex items-center justify-between mb-2">
         <span class="text-xs font-medium px-2 py-1 rounded-full ${carePlanStatusBadgeClass(plan.status)}">${escapeHtml(carePlanStatusLabel(plan.status))}</span>
         <span class="text-xs text-slate-400">${escapeHtml(plan.reviewDate ? 'นัดทบทวน ' + formatThaiDateDisplay(plan.reviewDate) : '')}</span>
@@ -255,7 +261,7 @@ function renderPlanForm(container, existingPlan, ctx) {
       </div>
       <div class="flex gap-2">
         <button id="cp-form-cancel" type="button" class="flex-1 py-2 rounded-xl bg-slate-100 text-slate-600 text-sm font-medium">ยกเลิก</button>
-        <button id="cp-form-submit" type="submit" class="flex-1 py-2 rounded-xl bg-sky-600 text-white text-sm font-medium">บันทึก</button>
+        <button id="cp-form-submit" type="submit" class="flex-1 py-2 rounded-xl accent-gradient text-white text-sm font-medium">บันทึก</button>
       </div>
     </form>
   `;

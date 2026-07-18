@@ -88,14 +88,20 @@ export async function renderAssessmentForm(content, params) {
   const state = { requestId: newRequestId(), answers: {}, submitting: false };
 
   bodyEl.innerHTML = `
-    <a href="#/assessments/${encodeURIComponent(params.patientId)}" class="text-sm text-sky-600 mb-3 inline-block">← กลับไปแบบประเมินของผู้ป่วยรายนี้</a>
+    <nav aria-label="breadcrumb" class="flex items-center flex-wrap gap-1.5 text-xs text-slate-400 mb-3">
+      <a href="#/assessments" class="hover:text-sky-600 transition">แบบประเมิน</a>
+      <svg class="w-3.5 h-3.5 text-slate-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>
+      <a href="#/assessments/${encodeURIComponent(params.patientId)}" class="hover:text-sky-600 transition">${escapeHtml(patient.name)}</a>
+      <svg class="w-3.5 h-3.5 text-slate-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>
+      <span class="text-slate-600 font-medium">${escapeHtml(def.title)}</span>
+    </nav>
     <h1 class="text-lg font-bold text-slate-800">${escapeHtml(def.title)}</h1>
     <p class="text-xs text-slate-400 mt-0.5 mb-1">${escapeHtml(def.subtitle)}</p>
     <p class="text-xs text-slate-500 mb-4">${escapeHtml(patient.name)} · HN ${escapeHtml(patient.hn)}</p>
 
     <p id="af-error" class="hidden text-xs text-rose-600 bg-rose-50 rounded-lg px-3 py-2 mb-3"></p>
     <div id="af-fields"></div>
-    <button id="af-submit" type="button" class="w-full py-3 rounded-xl bg-sky-600 text-white font-medium text-sm disabled:opacity-50">
+    <button id="af-submit" type="button" class="w-full py-3 rounded-xl accent-gradient text-white font-medium text-sm disabled:opacity-50">
       บันทึกแบบประเมิน
     </button>
   `;

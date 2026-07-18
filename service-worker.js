@@ -7,7 +7,13 @@
 // ต้องบัมพ์เลขนี้ทุกครั้งที่แก้ไฟล์ใน app shell — activate จะลบ cache ชื่อเก่าทิ้งแล้วโหลดใหม่ทั้งชุด
 // ถ้าไม่บัมพ์ ผู้ใช้เดิมจะได้ไฟล์เก่าค้างตลอดไป เพราะ fetch handler เป็น cache-first (เจอใน cache แล้วไม่ยิง network เลย)
 // v8: สร้าง INHOMESSS ฉบับเต็มตามแบบฟอร์มจริง (9 มิติ รายฟิลด์) แทนแบบ toggle เดิม → constants.js/form-widgets.js/assessment-form.js/assessment-detail.js/visit-form-steps.js/visit-form.js เปลี่ยน + ไฟล์ใหม่ inhomesss-form.js
-const CACHE_NAME = 'ltc-smart-care-v8';
+// v9: soft-shadow/gradient design pass — app.css ดีไซน์ระบบใหม่ทั้งชุด + ui.js (breadcrumb, skeleton/empty state) เปลี่ยน
+// v10: ui.js เพิ่ม real-time field validation (setFieldState/wireFieldValidation) — patient-form.js ใช้
+// v11: floating label (app.css) + renderPagination เพิ่ม page-size selector (ui.js) + drag-drop dropzone (visit-form-steps.js)
+// v12: floating label ขยายไปฟอร์มเยี่ยมบ้าน (visit-form-steps.js textField) + ฟอร์มผู้ใช้ ADMIN (admin/users.js)
+// v13: form-widgets.js ปุ่มเลือก (segmented/yesno/single/chip) ไล่สี gradient + inhomesss progress bar +
+// confirmDialog/promptDialog (ui.js) ไล่สี + CSV import (admin/patients-import.js) รองรับลากไฟล์วาง
+const CACHE_NAME = 'ltc-smart-care-v13';
 const APP_SHELL_FILES = [
   './',
   './index.html',

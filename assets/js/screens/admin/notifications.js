@@ -10,7 +10,7 @@
  * "skipped_no_line_id" = ผู้รับยังไม่ได้ผูก LINE ID ไม่ใช่ระบบพัง — แก้ได้ที่หน้าจัดการผู้ใช้หรือให้เจ้าตัวผูกเองที่ตั้งค่า
  */
 import { apiCall } from '../../api.js';
-import { renderListSkeleton, renderEmptyState, renderPagination, escapeHtml } from '../../ui.js';
+import { renderListSkeleton, renderEmptyState, renderPagination, renderBreadcrumb, escapeHtml } from '../../ui.js';
 import { formatThaiDateTime } from '../../date-picker.js';
 import { getUserDirectoryMap } from '../../directory.js';
 
@@ -87,7 +87,7 @@ export async function renderAdminNotifications(content) {
 
   content.innerHTML = `
     <div class="px-4 py-5 max-w-3xl mx-auto">
-      <a href="#/admin" class="text-sm text-sky-600 mb-3 inline-block">← กลับไปเมนูผู้ดูแลระบบ</a>
+      <div id="an-breadcrumb"></div>
       <h1 class="text-lg font-bold text-slate-800 mb-1">การแจ้งเตือน</h1>
       <p class="text-xs text-slate-400 mb-4">สถานะการส่งแจ้งเตือน LINE ทั้งหมด เรียงใหม่สุดก่อน</p>
 
@@ -102,6 +102,11 @@ export async function renderAdminNotifications(content) {
       <div id="an-pagination"></div>
     </div>
   `;
+
+  renderBreadcrumb(content.querySelector('#an-breadcrumb'), [
+    { label: 'ผู้ดูแลระบบ', href: '#/admin' },
+    { label: 'การแจ้งเตือน' }
+  ]);
 
   const resultsEl = content.querySelector('#an-results');
   const paginationEl = content.querySelector('#an-pagination');

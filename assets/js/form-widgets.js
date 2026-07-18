@@ -10,7 +10,7 @@
 import { escapeHtml } from './ui.js';
 
 export function card(innerHtml, extraClass = '') {
-  return `<div class="bg-white rounded-2xl shadow-sm p-4 mb-3 ${extraClass}">${innerHtml}</div>`;
+  return `<div class="flat-card bg-white rounded-2xl p-4 mb-3 ${extraClass}">${innerHtml}</div>`;
 }
 
 export function sectionTitle(text) {
@@ -23,7 +23,7 @@ export function segmentedChoice({ name, options, selectedValue }) {
     <div class="flex flex-wrap gap-2" data-segmented="${escapeHtml(name)}">
       ${options.map((opt) => `
         <button type="button" data-seg-value="${escapeHtml(String(opt.v))}"
-          class="px-3 py-2 rounded-xl border text-xs font-medium ${String(selectedValue) === String(opt.v) ? 'bg-sky-600 border-sky-600 text-white' : 'bg-white border-slate-200 text-slate-600'}">
+          class="px-3 py-2 rounded-xl border text-xs font-medium transition-all ${String(selectedValue) === String(opt.v) ? 'accent-gradient border-transparent text-white' : 'bg-white border-slate-200 text-slate-600 hover:border-sky-300 hover:bg-sky-50/50'}">
           ${escapeHtml(opt.l)}
         </button>
       `).join('')}
@@ -31,12 +31,17 @@ export function segmentedChoice({ name, options, selectedValue }) {
   `;
 }
 
-/** ปุ่ม ใช่/ไม่ใช่ สองปุ่ม — ใช้กับข้อคำถามแบบ boolean ทุกจุด (FallRisk/CaregiverBurden/INHOMESSS/2Q/8Q) */
+/**
+ * ปุ่ม ใช่/ไม่ใช่ สองปุ่ม — ใช้กับข้อคำถามแบบ boolean ทุกจุด (FallRisk/CaregiverBurden/INHOMESSS/2Q/8Q)
+ * สีแดง/เขียวตั้งใจคงไว้ (ไม่ใช่แค่สี accent ทั่วไป) เพราะสื่อความหมายทางคลินิกจริง — คำถามกลุ่มนี้ "ใช่" มักแปลว่า
+ * พบปัญหา/ความเสี่ยง (จึงเป็นสีแดง) และ "ไม่ใช่" มักแปลว่าปกติ (จึงเป็นสีเขียว) เปลี่ยนเป็นไล่สีเข้มขึ้นเพื่อความ
+ * มีมิติ (soft-shadow pass) แต่ยังคงโทนสีเดิมไว้ ไม่ใช้ accent-gradient (จะทำให้ผู้ใช้อ่านความหมายผิดได้)
+ */
 export function yesNoToggle({ name, value, yesLabel = 'ใช่', noLabel = 'ไม่ใช่' }) {
   return `
     <div class="flex gap-2" data-yesno="${escapeHtml(name)}">
-      <button type="button" data-yesno-value="true" class="flex-1 py-2 rounded-xl border text-xs font-medium ${value === true ? 'bg-rose-600 border-rose-600 text-white' : 'bg-white border-slate-200 text-slate-600'}">${escapeHtml(yesLabel)}</button>
-      <button type="button" data-yesno-value="false" class="flex-1 py-2 rounded-xl border text-xs font-medium ${value === false ? 'bg-emerald-600 border-emerald-600 text-white' : 'bg-white border-slate-200 text-slate-600'}">${escapeHtml(noLabel)}</button>
+      <button type="button" data-yesno-value="true" class="flex-1 py-2 rounded-xl border text-xs font-medium transition-all ${value === true ? 'bg-gradient-to-br from-rose-500 to-rose-600 border-transparent text-white shadow-[0_4px_12px_-2px_rgba(225,29,72,0.35)]' : 'bg-white border-slate-200 text-slate-600 hover:border-rose-200 hover:bg-rose-50/50'}">${escapeHtml(yesLabel)}</button>
+      <button type="button" data-yesno-value="false" class="flex-1 py-2 rounded-xl border text-xs font-medium transition-all ${value === false ? 'bg-gradient-to-br from-emerald-500 to-emerald-600 border-transparent text-white shadow-[0_4px_12px_-2px_rgba(5,150,105,0.35)]' : 'bg-white border-slate-200 text-slate-600 hover:border-emerald-200 hover:bg-emerald-50/50'}">${escapeHtml(noLabel)}</button>
     </div>
   `;
 }
@@ -50,7 +55,7 @@ export function singleChoice({ name, options, selectedValue }) {
     <div class="flex flex-wrap gap-2" data-single="${escapeHtml(name)}">
       ${options.map((opt) => `
         <button type="button" data-single-value="${escapeHtml(opt)}"
-          class="px-3 py-2 rounded-xl border text-xs font-medium ${selectedValue === opt ? 'bg-sky-600 border-sky-600 text-white' : 'bg-white border-slate-200 text-slate-600'}">
+          class="px-3 py-2 rounded-xl border text-xs font-medium transition-all ${selectedValue === opt ? 'accent-gradient border-transparent text-white' : 'bg-white border-slate-200 text-slate-600 hover:border-sky-300 hover:bg-sky-50/50'}">
           ${escapeHtml(opt)}
         </button>
       `).join('')}
@@ -71,7 +76,7 @@ export function chipMultiSelect({ name, options, selectedValues }) {
     <div class="flex flex-wrap gap-2" data-chips="${escapeHtml(name)}">
       ${options.map((opt) => `
         <button type="button" data-chip-value="${escapeHtml(opt)}"
-          class="px-3 py-1.5 rounded-full border text-xs font-medium ${(selectedValues || []).includes(opt) ? 'bg-sky-600 border-sky-600 text-white' : 'bg-white border-slate-200 text-slate-600'}">
+          class="px-3 py-1.5 rounded-full border text-xs font-medium transition-all ${(selectedValues || []).includes(opt) ? 'accent-gradient border-transparent text-white' : 'bg-white border-slate-200 text-slate-600 hover:border-sky-300 hover:bg-sky-50/50'}">
           ${escapeHtml(opt)}
         </button>
       `).join('')}

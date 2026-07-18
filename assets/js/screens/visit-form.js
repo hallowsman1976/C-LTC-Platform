@@ -115,16 +115,18 @@ function mountWizard(content, patient, state) {
     <div class="fixed inset-0 z-[35] bg-slate-50 flex flex-col">
       <div class="sticky top-0 bg-white border-b border-slate-200">
         <div class="px-4 py-3 flex items-center justify-between gap-3 md:max-w-xl md:mx-auto">
-          <button id="vf-exit-btn" type="button" class="text-slate-400 text-lg leading-none">✕</button>
+          <button id="vf-exit-btn" type="button" aria-label="ปิดฟอร์ม" class="w-8 h-8 -ml-1.5 flex items-center justify-center rounded-full text-slate-400 hover:bg-slate-100 transition">
+            <svg class="w-4.5 h-4.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
+          </button>
           <div class="text-center min-w-0">
             <p id="vf-step-counter" class="text-xs text-slate-400">ขั้นตอน ${state.currentStep}/${TOTAL_STEPS} · ${escapeHtml(patient.name)} (HN ${escapeHtml(patient.hn)})</p>
             <p id="vf-step-title" class="text-sm font-semibold text-slate-800 truncate">${escapeHtml(STEP_TITLES[state.currentStep - 1])}</p>
           </div>
-          <div class="w-5"></div>
+          <div class="w-8"></div>
         </div>
       </div>
-      <div class="h-1 bg-slate-100">
-        <div id="vf-progress-bar" class="h-1 bg-sky-600 transition-all" style="width:${(state.currentStep / TOTAL_STEPS) * 100}%"></div>
+      <div class="h-1.5 bg-slate-100">
+        <div id="vf-progress-bar" class="h-1.5 accent-gradient transition-all duration-300" style="width:${(state.currentStep / TOTAL_STEPS) * 100}%"></div>
       </div>
 
       <div id="vf-step-content" class="flex-1 overflow-y-auto px-4 py-4 md:max-w-xl md:mx-auto md:w-full"></div>
@@ -135,7 +137,7 @@ function mountWizard(content, patient, state) {
         <div class="px-4 py-3 flex gap-2 md:max-w-xl md:mx-auto">
           <button id="vf-prev-btn" type="button" class="px-4 py-2.5 rounded-xl bg-slate-100 text-slate-600 text-sm font-medium">ก่อนหน้า</button>
           <button id="vf-save-draft-btn" type="button" class="flex-1 py-2.5 rounded-xl bg-slate-100 text-slate-600 text-sm font-medium">บันทึกร่างไว้ก่อน</button>
-          <button id="vf-next-btn" type="button" class="flex-1 py-2.5 rounded-xl bg-sky-600 text-white text-sm font-medium">ถัดไป</button>
+          <button id="vf-next-btn" type="button" class="flex-1 py-2.5 rounded-xl accent-gradient text-white text-sm font-medium">ถัดไป</button>
         </div>
       </div>
     </div>

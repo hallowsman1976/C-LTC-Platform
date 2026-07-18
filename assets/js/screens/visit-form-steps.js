@@ -31,12 +31,26 @@ export const TOTAL_STEPS = STEP_TITLES.length;
  * UI builder helpers ที่ใช้ซ้ำหลายขั้นตอน
  * ============================================================ */
 
-function textField({ id, label, value, type = 'text', placeholder = '' }) {
+/**
+ * ช่อง text input — ปกติใช้ floating label (label ลอยขึ้นตอน focus/มีค่า ดู .field-float ใน app.css)
+ * ยกเว้นฟิลด์ที่ผูกกับ flatpickr (noFloat: true) เพราะ flatpickr เขียนทับ/ย้าย DOM ของ input โดยตรง
+ * ซึ่งชนกับสมมติฐานของ floating label ที่ต้องมี label เป็น sibling ถัดจาก input เป๊ะตลอดเวลา
+ */
+function textField({ id, label, value, type = 'text', placeholder = '', noFloat = false }) {
+  if (noFloat) {
+    return `
+      <div>
+        <label class="block text-xs font-medium text-slate-500 mb-1">${escapeHtml(label)}</label>
+        <input id="${id}" type="${type}" value="${escapeHtml(value || '')}" placeholder="${escapeHtml(placeholder)}"
+          class="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500" />
+      </div>
+    `;
+  }
   return `
-    <div>
-      <label class="block text-xs font-medium text-slate-500 mb-1">${escapeHtml(label)}</label>
-      <input id="${id}" type="${type}" value="${escapeHtml(value || '')}" placeholder="${escapeHtml(placeholder)}"
-        class="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500" />
+    <div class="field-float">
+      <input id="${id}" type="${type}" value="${escapeHtml(value || '')}" placeholder=" "
+        class="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 transition" />
+      <label for="${id}">${escapeHtml(label)}</label>
     </div>
   `;
 }
@@ -76,7 +90,7 @@ function renderStep1(container, state, ctx) {
     ${card(`
       ${sectionTitle('ตำแหน่ง GPS')}
       <p class="text-xs text-slate-500 mb-3">ระบบขอเข้าถึงตำแหน่งของคุณเพื่อบันทึกพิกัดสถานที่เยี่ยมบ้านไว้เป็นหลักฐานยืนยันการเยี่ยมจริง และช่วยวางแผนเส้นทางเยี่ยมครั้งถัดไป ข้อมูลนี้จะถูกเก็บไว้ในระบบของหน่วยงานเท่านั้น</p>
-      <button id="vf-request-gps-btn" type="button" class="w-full py-2.5 rounded-xl bg-sky-600 text-white text-sm font-medium" ${gps.requesting ? 'disabled' : ''}>
+      <button id="vf-request-gps-btn" type="button" class="w-full py-2.5 rounded-xl accent-gradient text-white text-sm font-medium" ${gps.requesting ? 'disabled' : ''}>
         ${gps.requesting ? 'กำลังขอตำแหน่ง...' : (gps.lat !== null ? 'บันทึกตำแหน่งใหม่อีกครั้ง' : 'อนุญาตและบันทึกตำแหน่ง GPS')}
       </button>
       ${gpsStatusHtml}
@@ -100,7 +114,7 @@ function renderStep2(container, state, ctx) {
   container.innerHTML = card(`
     ${sectionTitle('สัญญาณชีพ (Vital Signs)')}
     <div class="grid grid-cols-2 gap-3">
-      ${textField({ id: 'vf-bp', label: 'ความดันโลหิต', value: state.visit.bp, placeholder: '120/80' })}
+      ${textField({ id: 'vf-bp', label: 'ความดันโลหิต (เช่น 120/80)', value: state.visit.bp })}
       ${textField({ id: 'vf-hr', label: 'ชีพจร (ครั้ง/นาที)', value: state.visit.hr, type: 'text' })}
       ${textField({ id: 'vf-temp', label: 'อุณหภูมิ (°C)', value: state.visit.temp })}
       ${textField({ id: 'vf-spo2', label: 'SpO2 (%)', value: state.visit.spo2 })}
@@ -359,7 +373,7 @@ function renderStep8(container, state, ctx) {
       ${sectionTitle('คำแนะนำ / แผนติดตาม')}
       <textarea id="vf-notes" rows="3" placeholder="คำแนะนำสำหรับผู้ดูแล/แผนติดตามครั้งถัดไป"
         class="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm mb-3 focus:outline-none focus:ring-2 focus:ring-sky-500">${escapeHtml(state.visit.notes)}</textarea>
-      ${textField({ id: 'vf-nextvisit', label: 'วันนัดเยี่ยมถัดไป', value: state.visit.nextVisitDate, placeholder: 'เลือกวันนัด (พ.ศ.)' })}
+      ${textField({ id: 'vf-nextvisit', label: 'วันนัดเยี่ยมถัดไป', value: state.visit.nextVisitDate, placeholder: 'เลือกวันนัด (พ.ศ.)', noFloat: true })}
     `)}
   `;
 
@@ -411,8 +425,9 @@ function renderPhotoSlot(slot, photo) {
           <button type="button" data-remove-photo="${escapeHtml(slot.key)}" class="mt-1 text-xs text-rose-600 font-medium">ลบรูปนี้</button>
         </div>
       ` : `
-        <label class="flex flex-col items-center justify-center h-32 border-2 border-dashed border-slate-200 rounded-xl cursor-pointer text-slate-400 text-xs">
-          <span class="text-2xl mb-1">📷</span>แตะเพื่อถ่าย/เลือกรูป
+        <label data-dropzone="${escapeHtml(slot.key)}" class="flex flex-col items-center justify-center h-32 border-2 border-dashed border-slate-200 rounded-xl cursor-pointer text-slate-400 text-xs transition-colors hover:border-sky-300 hover:bg-sky-50/50">
+          <svg class="w-7 h-7 mb-1.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8a2 2 0 0 1 2-2h1.5l1-1.5h7l1 1.5H18a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2Z"/><circle cx="12" cy="13" r="3.3"/></svg>
+          <span class="text-center px-2">แตะเพื่อถ่าย/เลือกรูป<br class="sm:hidden" /><span class="hidden sm:inline"> หรือลากไฟล์มาวาง</span></span>
           <input type="file" accept="image/*" capture="environment" class="hidden" data-photo-input="${escapeHtml(slot.key)}" />
         </label>
       `}
@@ -439,7 +454,7 @@ function renderStep9(container, state, ctx) {
       <canvas id="vf-signature-canvas" width="600" height="220" class="w-full h-40 rounded-xl border border-slate-200 bg-slate-50 touch-none"></canvas>
       <div class="flex gap-2 mt-2">
         <button id="vf-signature-clear" type="button" class="flex-1 py-2 rounded-xl bg-slate-100 text-slate-600 text-xs font-medium">ล้างลายเซ็น</button>
-        <button id="vf-signature-confirm" type="button" class="flex-1 py-2 rounded-xl bg-sky-600 text-white text-xs font-medium">ยืนยันลายเซ็น</button>
+        <button id="vf-signature-confirm" type="button" class="flex-1 py-2 rounded-xl accent-gradient text-white text-xs font-medium">ยืนยันลายเซ็น</button>
       </div>
       <p class="text-xs ${state.signatureFileId ? 'text-emerald-600' : (state.signatureDataUrl ? 'text-sky-600' : 'text-slate-400')} mt-2">
         ${state.signatureFileId ? '✓ บันทึกและอัปโหลดลายเซ็นแล้ว' : (state.signatureDataUrl ? '⏳ กำลังอัปโหลดลายเซ็น...' : 'ยังไม่ได้ลงลายเซ็น (ไม่บังคับ)')}
@@ -453,6 +468,27 @@ function renderStep9(container, state, ctx) {
       input.addEventListener('change', async (e) => {
         const file = e.target.files && e.target.files[0];
         if (file) await ctx.addPhoto(slot.key, file);
+      });
+    }
+    // ลากไฟล์รูปมาวาง (desktop) — เสริมจากช่องแตะเลือก/ถ่ายรูปเดิม ไม่ได้แทนที่ (มือถือยังใช้ input[capture] ตามปกติ)
+    const dropzone = container.querySelector(`[data-dropzone="${cssId(slot.key)}"]`);
+    if (dropzone) {
+      ['dragenter', 'dragover'].forEach((evt) => {
+        dropzone.addEventListener(evt, (e) => {
+          e.preventDefault();
+          dropzone.classList.add('border-sky-400', 'bg-sky-50');
+        });
+      });
+      ['dragleave', 'dragend'].forEach((evt) => {
+        dropzone.addEventListener(evt, () => {
+          dropzone.classList.remove('border-sky-400', 'bg-sky-50');
+        });
+      });
+      dropzone.addEventListener('drop', async (e) => {
+        e.preventDefault();
+        dropzone.classList.remove('border-sky-400', 'bg-sky-50');
+        const file = e.dataTransfer.files && e.dataTransfer.files[0];
+        if (file && file.type.startsWith('image/')) await ctx.addPhoto(slot.key, file);
       });
     }
     const removeBtn = container.querySelector(`[data-remove-photo="${cssId(slot.key)}"]`);

@@ -12,7 +12,7 @@
  */
 import { apiCall } from '../api.js';
 import { getCurrentUser, hasRole } from '../auth.js';
-import { renderCardSkeleton, showToast, escapeHtml } from '../ui.js';
+import { renderCardSkeleton, showToast, wireFieldValidation, escapeHtml } from '../ui.js';
 import { getUsersByRole } from '../directory.js';
 import { isNonEmptyString, isValidThaiCid, isValidIsoDate, formatCidInput } from '../validation.js';
 import { initThaiBirthDatePicker, initThaiAppointmentDatePicker, computeAgeFromIsoDate } from '../date-picker.js';
@@ -48,6 +48,26 @@ export async function renderPatientForm(content, params) {
 
   initThaiBirthDatePicker(form.querySelector('#pf-birthdate'));
   initThaiAppointmentDatePicker(form.querySelector('#pf-nextvisit'));
+
+  wireFieldValidation(form.querySelector('#pf-name'), (val) => (isNonEmptyString(val) ? null : 'กรุณากรอกชื่อ-นามสกุล'));
+  wireFieldValidation(form.querySelector('#pf-hn'), (val) => (isNonEmptyString(val) ? null : 'กรุณากรอก HN'));
+  wireFieldValidation(form.querySelector('#pf-village'), (val) => (isNonEmptyString(val) ? null : 'กรุณากรอกหมู่บ้าน'));
+  wireFieldValidation(form.querySelector('#pf-tambon'), (val) => (isNonEmptyString(val) ? null : 'กรุณากรอกตำบล'));
+  wireFieldValidation(form.querySelector('#pf-amphoe'), (val) => (isNonEmptyString(val) ? null : 'กรุณากรอกอำเภอ'));
+  wireFieldValidation(form.querySelector('#pf-changwat'), (val) => (isNonEmptyString(val) ? null : 'กรุณากรอกจังหวัด'));
+  const genderSelect = form.querySelector('#pf-gender');
+  if (genderSelect) {
+    wireFieldValidation(genderSelect, (val) => (isNonEmptyString(val) ? null : 'กรุณาเลือกเพศ'));
+    genderSelect.addEventListener('change', () => {
+      genderSelect.dataset.touched = 'true';
+      genderSelect.dispatchEvent(new Event('blur'));
+    });
+  }
+  const cidInput = form.querySelector('#pf-cid');
+  if (cidInput) {
+    cidInput.addEventListener('input', () => { cidInput.value = formatCidInput(cidInput.value); });
+    wireFieldValidation(cidInput, (val) => (isValidThaiCid(formatCidInput(val)) ? null : 'กรุณากรอกเลขประจำตัวประชาชนให้ครบ 13 หลักและถูกต้อง'));
+  }
 
   // อายุคำนวณสดจากวันเกิดด้วยสูตรเดียวกับ computeAge_ ฝั่ง backend — เป็นตัวช่วยยืนยันสายตาว่าเลือกปีถูก
   // (พลาดปี พ.ศ./ค.ศ. สลับกันจะเห็นทันทีว่าอายุเพี้ยนเป็นหลักร้อย) ไม่ได้ส่งขึ้น backend เพราะ backend
@@ -115,6 +135,23 @@ export async function renderPatientForm(content, params) {
 }
 
 /**
+ * ช่อง text input แบบ floating label (label ลอยขึ้นตอน focus/มีค่า — ดู .field-float ใน app.css)
+ * placeholder=" " (เว้นวรรค ไม่ใช่ว่างเปล่า) จำเป็นสำหรับ CSS selector :placeholder-shown ให้ทำงานถูกต้อง
+ * @param {{id:string, name:string, label:string, value?:string, required?:boolean, extra?:string, inputAttrs?:string}} f
+ * @return {string}
+ */
+function floatField(f) {
+  return `
+    <div class="field-float">
+      <input id="${f.id}" name="${f.name}" type="text" value="${escapeHtml(f.value || '')}" placeholder=" " ${f.inputAttrs || ''}
+        class="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 transition" />
+      <label for="${f.id}">${escapeHtml(f.label)}${f.required ? ' *' : ''}</label>
+    </div>
+    <p id="${f.id}-error" class="hidden text-xs text-rose-500 mt-1"></p>
+  `;
+}
+
+/**
  * @param {{isEdit:boolean, patient:Object|null, currentUser:Object, cgOptions:Array, cmOptions:Array}} ctx
  * @return {string}
  */
@@ -129,11 +166,7 @@ function buildFormHtml(ctx) {
           class="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm bg-slate-50 text-slate-400" />
         <p class="text-xs text-slate-400 mt-1">แก้ไขเลขบัตรประชาชนไม่ได้หลังสร้างผู้ป่วยแล้ว</p>
       </div>`
-    : `<div>
-        <label class="block text-xs font-medium text-slate-500 mb-1">เลขประจำตัวประชาชน 13 หลัก *</label>
-        <input id="pf-cid" name="cid" type="text" inputmode="numeric" maxlength="13"
-          class="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500" />
-      </div>`;
+    : floatField({ id: 'pf-cid', name: 'cid', label: 'เลขประจำตัวประชาชน 13 หลัก', required: true, inputAttrs: 'inputmode="numeric" maxlength="13"' });
 
   const assignmentFields = !isEdit ? buildAssignmentFieldsHtml(currentUser, cgOptions, cmOptions) : '';
   const statusField = isEdit
@@ -146,29 +179,26 @@ function buildFormHtml(ctx) {
     : '';
 
   return `
-    <a href="#/patients" class="text-sm text-sky-600 mb-3 inline-block">← กลับไปรายชื่อผู้ป่วย</a>
+    <nav aria-label="breadcrumb" class="flex items-center flex-wrap gap-1.5 text-xs text-slate-400 mb-3">
+      <a href="#/patients" class="hover:text-sky-600 transition">ผู้ป่วย</a>
+      <svg class="w-3.5 h-3.5 text-slate-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>
+      <span class="text-slate-600 font-medium">${isEdit ? 'แก้ไขข้อมูล' : 'เพิ่มผู้ป่วยใหม่'}</span>
+    </nav>
     <h1 class="text-lg font-bold text-slate-800 mb-4">${isEdit ? 'แก้ไขข้อมูลผู้ป่วย' : 'เพิ่มผู้ป่วยใหม่'}</h1>
 
-    <form id="pf-form" class="bg-white rounded-2xl shadow-sm p-4 space-y-4">
+    <form id="pf-form" class="flat-card bg-white rounded-2xl p-4 space-y-4">
       <p id="pf-error" class="hidden text-xs text-rose-600 bg-rose-50 rounded-lg px-3 py-2"></p>
 
       <div class="grid grid-cols-2 gap-3">
-        <div class="col-span-2">
-          <label class="block text-xs font-medium text-slate-500 mb-1">ชื่อ-นามสกุล *</label>
-          <input id="pf-name" name="name" type="text" value="${escapeHtml(v.name || '')}"
-            class="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500" />
-        </div>
-        <div>
-          <label class="block text-xs font-medium text-slate-500 mb-1">HN *</label>
-          <input id="pf-hn" name="hn" type="text" value="${escapeHtml(v.hn || '')}"
-            class="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500" />
-        </div>
+        <div class="col-span-2">${floatField({ id: 'pf-name', name: 'name', label: 'ชื่อ-นามสกุล', value: v.name, required: true })}</div>
+        <div>${floatField({ id: 'pf-hn', name: 'hn', label: 'HN', value: v.hn, required: true })}</div>
         <div>
           <label class="block text-xs font-medium text-slate-500 mb-1">เพศ *</label>
-          <select id="pf-gender" name="gender" class="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500">
+          <select id="pf-gender" name="gender" class="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 transition">
             <option value="">เลือกเพศ</option>
             ${GENDER_OPTIONS.map((g) => `<option value="${escapeHtml(g)}" ${v.gender === g ? 'selected' : ''}>${escapeHtml(g)}</option>`).join('')}
           </select>
+          <p id="pf-gender-error" class="hidden text-xs text-rose-500 mt-1"></p>
         </div>
         <div>
           <label class="block text-xs font-medium text-slate-500 mb-1">วันเกิด *</label>
@@ -180,26 +210,10 @@ function buildFormHtml(ctx) {
       </div>
 
       <div class="grid grid-cols-2 gap-3">
-        <div>
-          <label class="block text-xs font-medium text-slate-500 mb-1">หมู่บ้าน *</label>
-          <input id="pf-village" name="village" type="text" value="${escapeHtml(v.village || '')}"
-            class="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500" />
-        </div>
-        <div>
-          <label class="block text-xs font-medium text-slate-500 mb-1">ตำบล *</label>
-          <input id="pf-tambon" name="tambon" type="text" value="${escapeHtml(v.tambon || '')}"
-            class="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500" />
-        </div>
-        <div>
-          <label class="block text-xs font-medium text-slate-500 mb-1">อำเภอ *</label>
-          <input id="pf-amphoe" name="amphoe" type="text" value="${escapeHtml(v.amphoe || '')}"
-            class="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500" />
-        </div>
-        <div>
-          <label class="block text-xs font-medium text-slate-500 mb-1">จังหวัด *</label>
-          <input id="pf-changwat" name="changwat" type="text" value="${escapeHtml(v.changwat || '')}"
-            class="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500" />
-        </div>
+        <div>${floatField({ id: 'pf-village', name: 'village', label: 'หมู่บ้าน', value: v.village, required: true })}</div>
+        <div>${floatField({ id: 'pf-tambon', name: 'tambon', label: 'ตำบล', value: v.tambon, required: true })}</div>
+        <div>${floatField({ id: 'pf-amphoe', name: 'amphoe', label: 'อำเภอ', value: v.amphoe, required: true })}</div>
+        <div>${floatField({ id: 'pf-changwat', name: 'changwat', label: 'จังหวัด', value: v.changwat, required: true })}</div>
       </div>
 
       <div class="grid grid-cols-2 gap-3">
@@ -213,7 +227,7 @@ function buildFormHtml(ctx) {
 
       ${assignmentFields}
 
-      <button id="pf-submit-btn" type="submit" class="w-full py-3 rounded-xl bg-sky-600 text-white font-medium text-sm">
+      <button id="pf-submit-btn" type="submit" class="w-full py-3 rounded-xl accent-gradient text-white font-medium text-sm">
         ${isEdit ? 'บันทึกการแก้ไข' : 'เพิ่มผู้ป่วย'}
       </button>
     </form>

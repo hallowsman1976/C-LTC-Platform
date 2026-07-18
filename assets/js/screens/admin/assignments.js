@@ -14,7 +14,7 @@
  * (patients.assignCareTeam เปิดให้ CM ด้วย แต่ CM ทำผ่านหน้า /patients/:id/assign เดิมที่รองรับเคสนั้นอยู่แล้ว)
  */
 import { apiCall } from '../../api.js';
-import { renderCardSkeleton, renderEmptyState, showToast, escapeHtml } from '../../ui.js';
+import { renderCardSkeleton, renderEmptyState, renderBreadcrumb, showToast, escapeHtml } from '../../ui.js';
 import { getUsersByRole } from '../../directory.js';
 
 const FETCH_PAGE_SIZE = 100;   // เพดานของ listPatients (PATIENT_LIST_MAX_PAGE_SIZE_)
@@ -33,12 +33,18 @@ export async function renderAdminAssignments(content) {
 
   content.innerHTML = `
     <div class="px-4 py-5 max-w-3xl mx-auto">
-      <a href="#/admin" class="text-sm text-sky-600 mb-3 inline-block">← กลับไปเมนูผู้ดูแลระบบ</a>
+      <div id="aa-breadcrumb"></div>
       <h1 class="text-lg font-bold text-slate-800 mb-1">มอบหมายทีมดูแล</h1>
       <p class="text-xs text-slate-400 mb-4">ดูภาพรวมว่าผู้ป่วยรายใดยังไม่มีผู้รับผิดชอบ และมอบหมายได้จากหน้านี้เลย</p>
       <div id="aa-body"></div>
     </div>
   `;
+
+  renderBreadcrumb(content.querySelector('#aa-breadcrumb'), [
+    { label: 'ผู้ดูแลระบบ', href: '#/admin' },
+    { label: 'มอบหมายทีมดูแล' }
+  ]);
+
   const bodyEl = content.querySelector('#aa-body');
   renderCardSkeleton(bodyEl);
 

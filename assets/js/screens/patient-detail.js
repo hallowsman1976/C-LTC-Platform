@@ -5,7 +5,7 @@
  */
 import { apiCall } from '../api.js';
 import { hasRole } from '../auth.js';
-import { renderCardSkeleton, renderListSkeleton, renderEmptyState, showToast, confirmDialog, escapeHtml } from '../ui.js';
+import { renderCardSkeleton, renderListSkeleton, renderEmptyState, renderBreadcrumb, showToast, confirmDialog, escapeHtml } from '../ui.js';
 import { formatThaiDateDisplay } from '../date-picker.js';
 import { riskBadgeClass, statusBadgeClass } from '../constants.js';
 
@@ -18,13 +18,18 @@ export async function renderPatientDetail(content, params) {
 
   content.innerHTML = `
     <div class="px-4 py-5 max-w-2xl mx-auto">
-      <a href="#/patients" class="text-sm text-sky-600 mb-3 inline-block">← กลับไปรายชื่อผู้ป่วย</a>
+      <div id="pd-breadcrumb"></div>
       <div id="pd-header"></div>
       <div id="pd-actions" class="flex flex-wrap gap-2 my-4"></div>
       <h2 class="text-sm font-semibold text-slate-700 mb-2">ประวัติการเยี่ยมล่าสุด</h2>
       <div id="pd-visits"></div>
     </div>
   `;
+
+  renderBreadcrumb(content.querySelector('#pd-breadcrumb'), [
+    { label: 'ผู้ป่วย', href: '#/patients' },
+    { label: 'รายละเอียด' }
+  ]);
 
   const headerEl = content.querySelector('#pd-header');
   const actionsEl = content.querySelector('#pd-actions');
@@ -109,19 +114,19 @@ function renderActions(container, patient) {
   const canArchive = hasRole('ADMIN') && !patient.isDeleted;
 
   if (canRecordVisit && !patient.isDeleted) {
-    buttons.push(`<a href="#/patients/${encodeURIComponent(patient.patientId)}/visit/new" class="px-3 py-2 rounded-xl bg-emerald-600 text-white text-sm font-medium">+ บันทึกการเยี่ยมวันนี้</a>`);
+    buttons.push(`<a href="#/patients/${encodeURIComponent(patient.patientId)}/visit/new" class="flex items-center gap-1.5 px-3 py-2 rounded-xl accent-gradient text-white text-sm font-medium hover:brightness-105 active:brightness-95 transition"><svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>บันทึกการเยี่ยมวันนี้</a>`);
   }
   if (canEditMaster) {
-    buttons.push(`<a href="#/patients/${encodeURIComponent(patient.patientId)}/edit" class="px-3 py-2 rounded-xl bg-slate-100 text-slate-700 text-sm font-medium">แก้ไขข้อมูล</a>`);
+    buttons.push(`<a href="#/patients/${encodeURIComponent(patient.patientId)}/edit" class="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-100 text-slate-700 text-sm font-medium hover:bg-slate-200 transition"><svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>แก้ไขข้อมูล</a>`);
   }
   if (canAssign) {
-    buttons.push(`<a href="#/patients/${encodeURIComponent(patient.patientId)}/assign" class="px-3 py-2 rounded-xl bg-slate-100 text-slate-700 text-sm font-medium">มอบหมายทีมดูแล</a>`);
+    buttons.push(`<a href="#/patients/${encodeURIComponent(patient.patientId)}/assign" class="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-100 text-slate-700 text-sm font-medium hover:bg-slate-200 transition"><svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3"/><path d="M3.5 20c0-3 2.5-5.5 5.5-5.5s5.5 2.5 5.5 5.5"/><path d="M17 8v6M14 11h6"/></svg>มอบหมายทีมดูแล</a>`);
   }
   if (canCarePlan) {
-    buttons.push(`<a href="#/patients/${encodeURIComponent(patient.patientId)}/care-plan" class="px-3 py-2 rounded-xl bg-sky-600 text-white text-sm font-medium">Care Plan</a>`);
+    buttons.push(`<a href="#/patients/${encodeURIComponent(patient.patientId)}/care-plan" class="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-sky-50 text-sky-700 text-sm font-medium hover:bg-sky-100 transition"><svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="4.5" width="14" height="17" rx="2"/><path d="M8.5 13l2.2 2.2L15.5 10.5"/></svg>Care Plan</a>`);
   }
   if (canArchive) {
-    buttons.push(`<button id="pd-archive-btn" type="button" class="px-3 py-2 rounded-xl bg-rose-50 text-rose-600 text-sm font-medium">เก็บเข้าคลัง</button>`);
+    buttons.push(`<button id="pd-archive-btn" type="button" class="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-rose-50 text-rose-600 text-sm font-medium hover:bg-rose-100 transition"><svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="7" width="16" height="13" rx="1.5"/><path d="M9 7V5.5A1.5 1.5 0 0 1 10.5 4h3A1.5 1.5 0 0 1 15 5.5V7M3 7h18"/></svg>เก็บเข้าคลัง</button>`);
   }
 
   container.innerHTML = buttons.join('');
@@ -138,16 +143,19 @@ function renderVisits(container, visits) {
   }
 
   container.innerHTML = visits.map((v, i) => `
-    <div class="flat-card animate-rise-in bg-white rounded-2xl p-4 mb-3" style="--delay:${Math.min(i, 8) * 40}ms">
+    <div class="flat-card flat-card-interactive animate-rise-in bg-white rounded-2xl p-4 mb-3" style="--delay:${Math.min(i, 8) * 40}ms">
       <div class="flex items-center justify-between">
-        <p class="text-sm font-semibold text-slate-800">ครั้งที่ ${v.visitNumber}</p>
+        <div class="flex items-center gap-2.5">
+          <span class="w-8 h-8 rounded-full bg-gradient-to-br from-sky-100 to-indigo-100 text-sky-700 flex items-center justify-center shrink-0 text-xs font-bold">${v.visitNumber}</span>
+          <p class="text-sm font-semibold text-slate-800">การเยี่ยมครั้งที่ ${v.visitNumber}</p>
+        </div>
         <span class="text-xs font-medium px-2 py-0.5 rounded-full ${v.reviewStatus === 'reviewed' ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-500'}">
           ${v.reviewStatus === 'reviewed' ? 'ตรวจทานแล้ว' : 'รอตรวจทาน'}
         </span>
       </div>
-      <p class="text-xs text-slate-400 mt-0.5">${escapeHtml(formatDateTime(v.visitDate))}</p>
-      <p class="text-xs text-slate-500 mt-2">BP ${escapeHtml(v.bp || '-')} · HR ${escapeHtml(v.hr || '-')} · Temp ${escapeHtml(v.temp || '-')} · SpO2 ${escapeHtml(v.spo2 || '-')}</p>
-      ${v.hasWound ? `<p class="text-xs text-rose-600 mt-1">พบแผลกดทับ ระยะ ${escapeHtml(v.wound.stage || '-')}</p>` : ''}
+      <p class="text-xs text-slate-400 mt-2 ml-[42px]">${escapeHtml(formatDateTime(v.visitDate))}</p>
+      <p class="text-xs text-slate-500 mt-1.5 ml-[42px]">BP ${escapeHtml(v.bp || '-')} · HR ${escapeHtml(v.hr || '-')} · Temp ${escapeHtml(v.temp || '-')} · SpO2 ${escapeHtml(v.spo2 || '-')}</p>
+      ${v.hasWound ? `<p class="text-xs text-rose-600 mt-1 ml-[42px]">พบแผลกดทับ ระยะ ${escapeHtml(v.wound.stage || '-')}</p>` : ''}
     </div>
   `).join('');
 }

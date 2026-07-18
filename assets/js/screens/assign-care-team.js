@@ -9,7 +9,7 @@
  */
 import { apiCall } from '../api.js';
 import { hasRole } from '../auth.js';
-import { renderCardSkeleton, showToast, escapeHtml } from '../ui.js';
+import { renderCardSkeleton, renderBreadcrumb, showToast, escapeHtml } from '../ui.js';
 import { getUsersByRole } from '../directory.js';
 
 /**
@@ -22,11 +22,17 @@ export async function renderAssignCareTeam(content, params) {
 
   content.innerHTML = `
     <div class="px-4 py-5 max-w-xl mx-auto">
-      <a href="#/patients/${encodeURIComponent(patientId)}" class="text-sm text-sky-600 mb-3 inline-block">← กลับไปรายละเอียดผู้ป่วย</a>
+      <div id="ac-breadcrumb"></div>
       <h1 class="text-lg font-bold text-slate-800 mb-4">มอบหมายทีมดูแล</h1>
       <div id="ac-body"></div>
     </div>
   `;
+
+  renderBreadcrumb(content.querySelector('#ac-breadcrumb'), [
+    { label: 'ผู้ป่วย', href: '#/patients' },
+    { label: 'รายละเอียด', href: `#/patients/${encodeURIComponent(patientId)}` },
+    { label: 'มอบหมายทีมดูแล' }
+  ]);
 
   const bodyEl = content.querySelector('#ac-body');
   renderCardSkeleton(bodyEl);
@@ -39,12 +45,12 @@ export async function renderAssignCareTeam(content, params) {
   const patient = patientData.patient;
 
   bodyEl.innerHTML = `
-    <div class="bg-white rounded-2xl shadow-sm p-4 mb-4">
+    <div class="flat-card bg-white rounded-2xl p-4 mb-4">
       <p class="text-sm font-semibold text-slate-800">${escapeHtml(patient.name)}</p>
       <p class="text-xs text-slate-400">HN ${escapeHtml(patient.hn)}</p>
     </div>
 
-    <form id="ac-form" class="bg-white rounded-2xl shadow-sm p-4 space-y-4">
+    <form id="ac-form" class="flat-card bg-white rounded-2xl p-4 space-y-4">
       <p id="ac-error" class="hidden text-xs text-rose-600 bg-rose-50 rounded-lg px-3 py-2"></p>
 
       <div>
@@ -76,7 +82,7 @@ export async function renderAssignCareTeam(content, params) {
         `}
       </div>
 
-      <button id="ac-submit-btn" type="submit" class="w-full py-3 rounded-xl bg-sky-600 text-white font-medium text-sm">บันทึกการมอบหมาย</button>
+      <button id="ac-submit-btn" type="submit" class="w-full py-3 rounded-xl accent-gradient text-white font-medium text-sm">บันทึกการมอบหมาย</button>
     </form>
   `;
 

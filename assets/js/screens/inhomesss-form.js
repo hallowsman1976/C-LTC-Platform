@@ -138,8 +138,8 @@ function renderDomainStepProgress(stepIndex, total) {
   return `
     <div class="mb-3">
       <p class="text-xs text-slate-400 mb-1">มิติที่ ${stepIndex + 1}/${total}</p>
-      <div class="h-1 bg-slate-100 rounded-full overflow-hidden">
-        <div class="h-1 bg-sky-600 transition-all" style="width:${pct}%"></div>
+      <div class="h-1.5 bg-slate-100 rounded-full overflow-hidden">
+        <div class="h-1.5 accent-gradient transition-all duration-300" style="width:${pct}%"></div>
       </div>
     </div>
   `;
@@ -169,7 +169,7 @@ export function renderInhomesssStep(answers, stepIndex) {
     `)}
     <div class="flex gap-2 mt-3 mb-4">
       <button type="button" data-ih-prev class="flex-1 py-2.5 rounded-xl bg-slate-100 text-slate-600 text-sm font-medium disabled:opacity-40" ${stepIndex === 0 ? 'disabled' : ''}>← มิติก่อนหน้า</button>
-      <button type="button" data-ih-next class="flex-1 py-2.5 rounded-xl bg-sky-600 text-white text-sm font-medium disabled:opacity-40" ${stepIndex === total - 1 ? 'disabled' : ''}>มิติถัดไป →</button>
+      <button type="button" data-ih-next class="flex-1 py-2.5 rounded-xl accent-gradient text-white text-sm font-medium disabled:opacity-40" ${stepIndex === total - 1 ? 'disabled' : ''}>มิติถัดไป →</button>
     </div>
   `;
 }

@@ -173,27 +173,27 @@ async function renderSettings(content) {
   content.innerHTML = `
     <div class="px-4 py-5 max-w-md mx-auto">
       <h1 class="text-lg font-bold text-slate-800 mb-4">ตั้งค่า</h1>
-      <div class="bg-white rounded-2xl shadow-sm p-4 mb-3 space-y-2 text-sm">
+      <div class="flat-card bg-white rounded-2xl p-4 mb-3 space-y-2 text-sm">
         <div class="flex justify-between"><span class="text-slate-400">ชื่อ</span><span class="text-slate-700 font-medium">${escapeHtml(user ? user.name : '-')}</span></div>
         <div class="flex justify-between"><span class="text-slate-400">บทบาท</span><span class="text-slate-700 font-medium">${escapeHtml(roleLabel(user && user.role))}</span></div>
         <div class="flex justify-between"><span class="text-slate-400">ชื่อผู้ใช้</span><span class="text-slate-700 font-medium">${escapeHtml((user && user.username) || '-')}</span></div>
       </div>
 
       ${hasRole('ADMIN') ? `
-        <a href="#/admin" class="block bg-white rounded-2xl shadow-sm p-4 mb-3 active:bg-slate-50">
+        <a href="#/admin" class="block flat-card bg-white rounded-2xl p-4 mb-3 active:bg-slate-50">
           <p class="text-sm font-semibold text-slate-800">ผู้ดูแลระบบ</p>
           <p class="text-xs text-slate-400 mt-0.5">จัดการผู้ใช้ · Audit Log · การแจ้งเตือน</p>
         </a>
       ` : ''}
 
-      <form id="line-id-form" class="bg-white rounded-2xl shadow-sm p-4 mb-3 space-y-3">
+      <form id="line-id-form" class="flat-card bg-white rounded-2xl p-4 mb-3 space-y-3">
         <div>
           <label class="block text-xs font-medium text-slate-500 mb-1">ผูก LINE User ID (รับการแจ้งเตือนความเสี่ยง/นัดหมาย)</label>
           <input id="line-id-input" type="text" value="${escapeHtml((user && user.lineUserId) || '')}" placeholder="เช่น U1234567890abcdef1234567890abcdef"
             class="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500" />
           <p class="text-xs text-slate-400 mt-1">หา LINE User ID ได้จากแอด LINE Official Account ของหน่วยงานแล้วขอรหัสจากผู้ดูแลระบบ</p>
         </div>
-        <button id="line-id-save-btn" type="submit" class="w-full py-2.5 rounded-xl bg-sky-600 text-white text-sm font-medium">บันทึก LINE ID</button>
+        <button id="line-id-save-btn" type="submit" class="w-full py-2.5 rounded-xl accent-gradient text-white text-sm font-medium">บันทึก LINE ID</button>
       </form>
 
       <button id="logout-btn" type="button" class="w-full py-3 rounded-xl bg-rose-600 text-white font-medium text-sm">ออกจากระบบ</button>

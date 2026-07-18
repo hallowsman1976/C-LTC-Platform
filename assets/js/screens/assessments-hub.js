@@ -10,7 +10,7 @@
  */
 import { apiCall } from '../api.js';
 import { hasRole } from '../auth.js';
-import { renderListSkeleton, renderCardSkeleton, renderEmptyState, renderPagination, escapeHtml } from '../ui.js';
+import { renderListSkeleton, renderCardSkeleton, renderEmptyState, renderPagination, renderBreadcrumb, escapeHtml } from '../ui.js';
 import { ASSESSMENT_DEFS } from './assessment-form.js';
 import { formatThaiDateTime } from '../date-picker.js';
 import { statusBadgeClass } from '../constants.js';
@@ -110,7 +110,11 @@ export async function renderPatientAssessments(content, params) {
   const patient = data.patient;
 
   bodyEl.innerHTML = `
-    <a href="#/assessments" class="text-sm text-sky-600 mb-3 inline-block">← เลือกผู้ป่วยคนอื่น</a>
+    <nav aria-label="breadcrumb" class="flex items-center flex-wrap gap-1.5 text-xs text-slate-400 mb-3">
+      <a href="#/assessments" class="hover:text-sky-600 transition">แบบประเมิน</a>
+      <svg class="w-3.5 h-3.5 text-slate-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>
+      <span class="text-slate-600 font-medium">${escapeHtml(patient.name)}</span>
+    </nav>
     <h1 class="text-lg font-bold text-slate-800">${escapeHtml(patient.name)}</h1>
     <p class="text-xs text-slate-400 mt-0.5 mb-4">HN ${escapeHtml(patient.hn)} · อายุ ${patient.age ?? '-'} ปี</p>
 

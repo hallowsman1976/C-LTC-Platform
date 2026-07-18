@@ -39,45 +39,54 @@ nav.app-bottom-nav {
 
 /**
  * ==========================================================================
- * Design system เสริม (Phase: flat/minimal accent pass — mirror จาก aitmpl.com/featured/brightdata)
- * แทนที่ระบบ glassmorphism/gradient เดิมทั้งชุด ด้วยแนวทางแบน เส้นขอบบาง ไม่มีเงา ตามต้นแบบที่เลือก
- * (การ์ดพื้นเรียบขอบ 1px, ปุ่ม/แถบเน้นไล่สีแนวนอนบาง ๆ) สีเน้น (accent) ตั้งใจเลื่อนจากโทนส้ม/แดง
- * ของต้นแบบมาเป็นน้ำเงินอินดิโก้แทน เพื่อให้ห่างจากโทนสีที่แอปใช้สื่อความเสี่ยงทางคลินิกอยู่แล้ว
+ * Design system เสริม (Phase: soft-shadow/gradient pass)
+ * แทนที่ระบบแบน/ไม่มีเงาเดิมทั้งชุด ด้วยการ์ดเงานุ่มหลายชั้น มุมโค้ง 12-20px และ
+ * ไล่สีฟ้า-น้ำเงินอินดิโก้ที่เข้ากับโทนสีหลักของแอป (sky, theme-color #0284c7)
+ * ตั้งใจคงชื่อคลาสเดิม (flat-card / flat-badge / accent-gradient) ไว้ทุกอัน
+ * เพราะมีการอ้างอิงอยู่ทั่วทั้งแอป (12 ไฟล์ใน assets/js/screens) — เปลี่ยนแค่นิยามสไตล์
+ * สีเน้น (accent) ยังคงห่างจากโทนสีที่แอปใช้สื่อความเสี่ยงทางคลินิก
  * (riskBadgeClass/statusBadgeClass: emerald/amber/orange/rose) กันปุ่ม/ลิงก์ทั่วไปแย่งความสนใจ
  * ไปจากป้ายแจ้งเตือนที่ต้องรีบสังเกต (เช่น "ความเสี่ยงสูงมาก", "เลยนัด")
  * ==========================================================================
  */
 :root {
-  --ltc-accent: #3e63dd;        /* น้ำเงินอินดิโก้ — สีเน้นหลัก */
-  --ltc-accent-dark: #2f4eb8;   /* เข้มขึ้นสำหรับ gradient sweep/hover */
-  --ltc-border: #e5e5e5;        /* เส้นขอบการ์ด/ป้าย ตามต้นแบบ */
+  --ltc-accent: #0284c7;          /* ฟ้า — สีเน้นหลัก ตรงกับ theme-color */
+  --ltc-accent-dark: #4338ca;     /* น้ำเงินอินดิโก้เข้ม — ปลายทาง gradient */
+  --ltc-accent-soft: #e0f2fe;     /* ฟ้าอ่อนมาก — พื้นหลัง badge/hover */
+  --ltc-shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.05);
+  --ltc-shadow-md: 0 4px 16px -4px rgba(15, 23, 42, 0.10), 0 1px 3px rgba(15, 23, 42, 0.06);
+  --ltc-shadow-lg: 0 12px 32px -8px rgba(2, 132, 199, 0.18), 0 2px 6px rgba(15, 23, 42, 0.06);
 }
 
-/* การ์ดแบน ขอบบาง ไม่มีเงา (แทน .shadow-soft เดิม) */
+/* การ์ดเงานุ่มหลายชั้น มุมโค้ง (แทนการ์ดแบนขอบบางเดิม) */
 .flat-card {
-  border: 1px solid var(--ltc-border);
+  border: 1px solid rgba(15, 23, 42, 0.04);
+  box-shadow: var(--ltc-shadow-md);
 }
 
 .flat-card-interactive {
-  transition: border-color 0.15s ease-out;
+  transition: transform 0.18s ease-out, box-shadow 0.18s ease-out;
 }
 .flat-card-interactive:hover {
-  border-color: var(--ltc-accent);
+  transform: translateY(-2px);
+  box-shadow: var(--ltc-shadow-lg);
 }
 @media (prefers-reduced-motion: reduce) {
   .flat-card-interactive { transition: none; }
+  .flat-card-interactive:hover { transform: none; }
 }
 
-/* ป้าย/badge พื้นเทาอ่อนขอบบาง (แทน .glass เดิมที่ใช้ทับพื้น gradient) */
+/* ป้าย/badge พื้นฟ้าอ่อนไล่สีบาง ๆ (แทนป้ายพื้นเทาขอบบางเดิม) */
 .flat-badge {
-  background: #f5f5f5;
-  border: 1px solid var(--ltc-border);
-  color: #525252;
+  background: linear-gradient(135deg, var(--ltc-accent-soft), #eef2ff);
+  border: 1px solid rgba(2, 132, 199, 0.12);
+  color: #0369a1;
 }
 
-/* แถบ/ปุ่มเน้น ไล่สีแนวนอนบาง ๆ ตามต้นแบบ (แทน .gradient-hero เดิม) */
+/* แถบ/ปุ่มเน้น ไล่สีฟ้า-อินดิโก้ พร้อมเงานุ่มโทนสี (ใช้กับ hero/ปุ่มหลัก) */
 .accent-gradient {
-  background-image: linear-gradient(to right, var(--ltc-accent) 0%, var(--ltc-accent-dark) 50%, var(--ltc-accent) 100%);
+  background-image: linear-gradient(135deg, var(--ltc-accent) 0%, var(--ltc-accent-dark) 100%);
+  box-shadow: var(--ltc-shadow-lg);
 }
 
 /* Skeleton โหลดข้อมูลแบบ shimmer (แทน animate-pulse ตายตัว) — ใช้ทั่วแอปผ่าน renderListSkeleton/renderCardSkeleton */
@@ -110,6 +119,46 @@ nav.app-bottom-nav {
 input:focus,
 button:focus-visible {
   outline: none;
+}
+
+/**
+ * Floating label — label เริ่มซ้อนอยู่ในช่อง input แล้วลอยขึ้นด้านบนตอน focus/มีค่า (ตาม spec ข้อ 6)
+ * ใช้ CSS ล้วน (peer + :placeholder-shown) ไม่ต้องพึ่ง JS — input ต้องมี placeholder=" " (เว้นวรรค ไม่ใช่ว่าง
+ * เปล่า) เพื่อให้ :placeholder-shown ทำงานถูกต้องตอนไม่มีค่า, label ต้องอยู่ "หลัง" input ใน DOM ให้ CSS
+ * sibling selector (~) ทำงานได้ — ไม่ใช้กับ select/flatpickr เพราะสอง widget นี้ไม่รองรับ :placeholder-shown
+ * ให้ผลลัพธ์ที่เชื่อถือได้ข้ามเบราว์เซอร์ (ยังใช้ label อยู่ด้านบนแบบเดิมสำหรับสองกรณีนั้น)
+ */
+.field-float {
+  position: relative;
+}
+.field-float input {
+  padding-top: 1.125rem;
+  padding-bottom: 0.5rem;
+}
+.field-float label {
+  position: absolute;
+  left: 0.75rem;
+  top: 0.9rem;
+  font-size: 0.875rem;
+  color: #94a3b8;
+  background: #fff;
+  padding: 0 0.25rem;
+  pointer-events: none;
+  transform-origin: left top;
+  transition: transform 0.15s ease-out, color 0.15s ease-out, top 0.15s ease-out;
+}
+.field-float input:focus ~ label,
+.field-float input:not(:placeholder-shown) ~ label {
+  top: -0.5rem;
+  transform: scale(0.8);
+  color: var(--ltc-accent);
+  font-weight: 600;
+}
+.field-float input:focus ~ label {
+  color: var(--ltc-accent);
+}
+@media (prefers-reduced-motion: reduce) {
+  .field-float label { transition: none; }
 }
 
 ::-webkit-scrollbar {

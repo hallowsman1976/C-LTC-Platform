@@ -11,7 +11,7 @@
  *   ถ้าไม่คัดลอกตอนนั้นคือหายเลย ต้องรีเซ็ตใหม่ — หน้านี้จึงโชว์ค้างไว้ให้คัดลอกจนกว่าจะปิดเอง
  */
 import { apiCall } from '../../api.js';
-import { renderListSkeleton, renderEmptyState, renderPagination, showToast, confirmDialog, escapeHtml } from '../../ui.js';
+import { renderListSkeleton, renderEmptyState, renderPagination, renderBreadcrumb, showToast, confirmDialog, escapeHtml } from '../../ui.js';
 import { invalidateUserDirectoryCache } from '../../directory.js';
 import { ROLE_LABELS, roleLabel } from '../../constants.js';
 
@@ -28,15 +28,15 @@ const ROLE_BADGE_CLASS = {
 
 /** @param {HTMLElement} content */
 export async function renderAdminUsers(content) {
-  const state = { search: '', role: '', page: 1 };
+  const state = { search: '', role: '', page: 1, pageSize: PAGE_SIZE };
   let searchDebounceTimer = null;
 
   content.innerHTML = `
     <div class="px-4 py-5 max-w-3xl mx-auto">
-      <a href="#/admin" class="text-sm text-sky-600 mb-3 inline-block">← กลับไปเมนูผู้ดูแลระบบ</a>
+      <div id="au-breadcrumb"></div>
       <div class="flex items-center justify-between mb-4">
         <h1 class="text-lg font-bold text-slate-800">จัดการผู้ใช้</h1>
-        <button id="au-new-btn" type="button" class="px-3 py-2 rounded-xl bg-sky-600 text-white text-sm font-medium">+ เพิ่มผู้ใช้</button>
+        <button id="au-new-btn" type="button" class="px-3 py-2 rounded-xl accent-gradient text-white text-sm font-medium">+ เพิ่มผู้ใช้</button>
       </div>
 
       <div id="au-new-form-slot"></div>
@@ -55,6 +55,11 @@ export async function renderAdminUsers(content) {
     </div>
   `;
 
+  renderBreadcrumb(content.querySelector('#au-breadcrumb'), [
+    { label: 'ผู้ดูแลระบบ', href: '#/admin' },
+    { label: 'จัดการผู้ใช้' }
+  ]);
+
   const resultsEl = content.querySelector('#au-results');
   const paginationEl = content.querySelector('#au-pagination');
   const newFormSlot = content.querySelector('#au-new-form-slot');
@@ -72,11 +77,15 @@ export async function renderAdminUsers(content) {
     renderListSkeleton(resultsEl, 5);
     paginationEl.innerHTML = '';
     const data = await apiCall('admin.users.list', {
-      search: state.search, role: state.role, page: state.page, pageSize: PAGE_SIZE
+      search: state.search, role: state.role, page: state.page, pageSize: state.pageSize
     });
 
     if (!data.items || data.items.length === 0) {
       renderEmptyState(resultsEl, { title: 'ไม่พบผู้ใช้ที่ตรงกับเงื่อนไขนี้', message: 'ลองปรับคำค้นหาหรือตัวกรองดูอีกครั้ง' });
+      renderPagination(paginationEl, { page: 1, pageSize: state.pageSize, total: 0 }, () => {}, {
+        pageSizeOptions: [10, 20, 50, 100],
+        onPageSizeChange: (pageSize) => { state.pageSize = pageSize; state.page = 1; loadList(); }
+      });
       return;
     }
 
@@ -86,6 +95,13 @@ export async function renderAdminUsers(content) {
     renderPagination(paginationEl, { page: data.page, pageSize: data.pageSize, total: data.total }, (nextPage) => {
       state.page = nextPage;
       loadList();
+    }, {
+      pageSizeOptions: [10, 20, 50, 100],
+      onPageSizeChange: (pageSize) => {
+        state.pageSize = pageSize;
+        state.page = 1;
+        loadList();
+      }
     });
   }
 
@@ -111,6 +127,22 @@ export async function renderAdminUsers(content) {
   roleSelect.addEventListener('change', () => { state.role = roleSelect.value; state.page = 1; loadList(); });
 
   await loadList();
+}
+
+/**
+ * ช่อง text input แบบ floating label — id ต้องไม่ชนกัน จึงรับ id เต็มจากผู้เรียก (การ์ดแก้ไขผู้ใช้เปิดพร้อมกันได้
+ * หลายใบ ต่างจากฟอร์มเพิ่มผู้ใช้ใหม่ที่เปิดได้ทีละใบ — ผู้เรียกจึงต้องผูก userId เข้ากับ id เองตอนเป็นฟอร์มแก้ไข)
+ * @param {{id:string, field:string, label:string, value?:string, required?:boolean, inputAttrs?:string}} f
+ * @return {string}
+ */
+function floatField(f) {
+  return `
+    <div class="field-float">
+      <input id="${f.id}" data-field="${f.field}" type="text" value="${escapeHtml(f.value || '')}" placeholder=" " ${f.inputAttrs || ''}
+        class="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-sky-500 transition" />
+      <label for="${f.id}">${escapeHtml(f.label)}${f.required ? ' *' : ''}</label>
+    </div>
+  `;
 }
 
 /**
@@ -228,11 +260,7 @@ function renderEditForm(container, u, ctx) {
   container.innerHTML = `
     <form class="border border-slate-100 rounded-xl p-3 mt-3 space-y-3 bg-slate-50">
       <p data-error class="hidden text-xs text-rose-600 bg-rose-50 rounded-lg px-3 py-2"></p>
-      <div>
-        <label class="block text-xs font-medium text-slate-500 mb-1">ชื่อ-นามสกุล *</label>
-        <input data-field="name" type="text" value="${escapeHtml(u.name)}"
-          class="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-sky-500" />
-      </div>
+      ${floatField({ id: `au-edit-name-${escapeHtml(u.userId)}`, field: 'name', label: 'ชื่อ-นามสกุล', value: u.name, required: true })}
       <div class="grid grid-cols-2 gap-2">
         <div>
           <label class="block text-xs font-medium text-slate-500 mb-1">บทบาท</label>
@@ -240,21 +268,13 @@ function renderEditForm(container, u, ctx) {
             ${Object.keys(ROLE_LABELS).map((r) => `<option value="${escapeHtml(r)}" ${u.role === r ? 'selected' : ''}>${escapeHtml(ROLE_LABELS[r])}</option>`).join('')}
           </select>
         </div>
-        <div>
-          <label class="block text-xs font-medium text-slate-500 mb-1">เบอร์โทร</label>
-          <input data-field="phone" type="text" value="${escapeHtml(u.phone || '')}"
-            class="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-sky-500" />
-        </div>
+        ${floatField({ id: `au-edit-phone-${escapeHtml(u.userId)}`, field: 'phone', label: 'เบอร์โทร', value: u.phone })}
       </div>
-      <div>
-        <label class="block text-xs font-medium text-slate-500 mb-1">LINE User ID</label>
-        <input data-field="lineUserId" type="text" value="${escapeHtml(u.lineUserId || '')}" placeholder="เว้นว่างได้ถ้ายังไม่ผูก"
-          class="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-sky-500" />
-      </div>
+      ${floatField({ id: `au-edit-line-${escapeHtml(u.userId)}`, field: 'lineUserId', label: 'LINE User ID', value: u.lineUserId })}
       <p class="text-xs text-slate-400">ชื่อผู้ใช้และเลขบัตรประชาชนแก้ที่นี่ไม่ได้ · เปลี่ยนบทบาทเป็น CG จะทำให้ผู้ใช้ล็อกอินด้วยรหัสผ่านเดิมไม่ได้</p>
       <div class="flex gap-2">
         <button type="button" data-cancel class="flex-1 py-2 rounded-xl bg-slate-100 text-slate-600 text-sm font-medium">ยกเลิก</button>
-        <button type="submit" data-submit class="flex-1 py-2 rounded-xl bg-sky-600 text-white text-sm font-medium">บันทึก</button>
+        <button type="submit" data-submit class="flex-1 py-2 rounded-xl accent-gradient text-white text-sm font-medium">บันทึก</button>
       </div>
     </form>
   `;
@@ -311,42 +331,26 @@ function renderCreateForm(container, ctx) {
             ${Object.keys(ROLE_LABELS).map((r) => `<option value="${escapeHtml(r)}" ${state.role === r ? 'selected' : ''}>${escapeHtml(ROLE_LABELS[r])}</option>`).join('')}
           </select>
         </div>
-        <div>
-          <label class="block text-xs font-medium text-slate-500 mb-1">ชื่อ-นามสกุล *</label>
-          <input data-field="name" type="text" value="${escapeHtml(state.name || '')}"
-            class="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500" />
-        </div>
+        ${floatField({ id: 'au-new-name', field: 'name', label: 'ชื่อ-นามสกุล', value: state.name, required: true })}
 
         ${isCg ? `
           <div>
-            <label class="block text-xs font-medium text-slate-500 mb-1">เลขประจำตัวประชาชน 13 หลัก *</label>
-            <input data-field="cid" type="text" inputmode="numeric" maxlength="13" value="${escapeHtml(state.cid || '')}"
-              class="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500" />
+            ${floatField({ id: 'au-new-cid', field: 'cid', label: 'เลขประจำตัวประชาชน 13 หลัก', value: state.cid, required: true, inputAttrs: 'inputmode="numeric" maxlength="13"' })}
             <p class="text-xs text-slate-400 mt-1">ผู้ดูแล/อสม. ล็อกอินด้วยเลขบัตรประชาชน ไม่ต้องตั้งรหัสผ่าน</p>
           </div>
         ` : `
+          ${floatField({ id: 'au-new-username', field: 'username', label: 'ชื่อผู้ใช้', value: state.username, required: true })}
           <div>
-            <label class="block text-xs font-medium text-slate-500 mb-1">ชื่อผู้ใช้ *</label>
-            <input data-field="username" type="text" value="${escapeHtml(state.username || '')}"
-              class="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500" />
-          </div>
-          <div>
-            <label class="block text-xs font-medium text-slate-500 mb-1">รหัสผ่าน *</label>
-            <input data-field="password" type="text" value="${escapeHtml(state.password || '')}"
-              class="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500" />
+            ${floatField({ id: 'au-new-password', field: 'password', label: 'รหัสผ่าน', value: state.password, required: true })}
             <p class="text-xs text-slate-400 mt-1">อย่างน้อย ${MIN_PASSWORD_LENGTH} ตัวอักษร — แจ้งให้ผู้ใช้เปลี่ยนเองภายหลัง</p>
           </div>
         `}
 
-        <div>
-          <label class="block text-xs font-medium text-slate-500 mb-1">เบอร์โทร</label>
-          <input data-field="phone" type="text" value="${escapeHtml(state.phone || '')}"
-            class="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500" />
-        </div>
+        ${floatField({ id: 'au-new-phone', field: 'phone', label: 'เบอร์โทร', value: state.phone })}
 
         <div class="flex gap-2">
           <button type="button" data-cancel class="flex-1 py-2.5 rounded-xl bg-slate-100 text-slate-600 text-sm font-medium">ยกเลิก</button>
-          <button type="submit" data-submit class="flex-1 py-2.5 rounded-xl bg-sky-600 text-white text-sm font-medium">สร้างผู้ใช้</button>
+          <button type="submit" data-submit class="flex-1 py-2.5 rounded-xl accent-gradient text-white text-sm font-medium">สร้างผู้ใช้</button>
         </div>
       </form>
     `;

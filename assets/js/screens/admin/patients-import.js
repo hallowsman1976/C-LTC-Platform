@@ -10,7 +10,7 @@
  * ตัวตัดสินจริงว่าแถวไหนผ่าน/ไม่ผ่านคือ backend (validateImportRow_) เสมอ
  */
 import { apiCall, ApiError, NetworkError } from '../../api.js';
-import { showToast, confirmDialog, escapeHtml } from '../../ui.js';
+import { showToast, confirmDialog, renderBreadcrumb, escapeHtml } from '../../ui.js';
 import { exportToCsv } from '../../csv-export.js';
 import { parseCsv } from '../../csv-parse.js';
 import { parseTypedDateToIso } from '../../date-picker.js';
@@ -100,7 +100,7 @@ export async function renderAdminPatientsImport(content) {
 
   content.innerHTML = `
     <div class="px-4 py-5 max-w-3xl mx-auto">
-      <a href="#/admin" class="text-sm text-sky-600 mb-3 inline-block">← กลับไปเมนูผู้ดูแลระบบ</a>
+      <div id="pi-breadcrumb"></div>
       <h1 class="text-lg font-bold text-slate-800 mb-1">นำเข้าข้อมูลผู้ป่วย</h1>
       <p class="text-xs text-slate-400 mb-4">
         อัปโหลดไฟล์ CSV เพื่อเพิ่มผู้ป่วยหลายรายพร้อมกัน — ไม่รวมมอบหมายทีมดูแล (ทำที่หน้า "มอบหมายทีมดูแล" หลังนำเข้าแล้ว)
@@ -116,8 +116,9 @@ export async function renderAdminPatientsImport(content) {
 
       <div class="flat-card bg-white rounded-2xl p-4 mb-4">
         <p class="text-sm font-semibold text-slate-700 mb-2">2. อัปโหลดไฟล์ที่กรอกแล้ว</p>
-        <label class="flex flex-col items-center justify-center h-24 border-2 border-dashed border-slate-200 rounded-xl cursor-pointer text-slate-400 text-xs">
-          <span class="text-2xl mb-1">📄</span>แตะเพื่อเลือกไฟล์ CSV
+        <label id="pi-dropzone" class="flex flex-col items-center justify-center h-24 border-2 border-dashed border-slate-200 rounded-xl cursor-pointer text-slate-400 text-xs transition-colors hover:border-sky-300 hover:bg-sky-50/50">
+          <svg class="w-6 h-6 mb-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0 0l-4-4m4 4l4-4M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg>
+          <span>แตะเพื่อเลือกไฟล์ CSV <span class="hidden sm:inline">หรือลากไฟล์มาวาง</span></span>
           <input type="file" accept=".csv,text/csv" class="hidden" id="pi-file-input" />
         </label>
         <p id="pi-file-name" class="text-xs text-slate-400 mt-2"></p>
@@ -130,9 +131,15 @@ export async function renderAdminPatientsImport(content) {
     </div>
   `;
 
+  renderBreadcrumb(content.querySelector('#pi-breadcrumb'), [
+    { label: 'ผู้ดูแลระบบ', href: '#/admin' },
+    { label: 'นำเข้าข้อมูลผู้ป่วย' }
+  ]);
+
   const fileErrorEl = content.querySelector('#pi-file-error');
   const fileNameEl = content.querySelector('#pi-file-name');
   const fileInputEl = content.querySelector('#pi-file-input');
+  const dropzoneEl = content.querySelector('#pi-dropzone');
   const previewEl = content.querySelector('#pi-preview');
   const resultEl = content.querySelector('#pi-result');
 
@@ -145,8 +152,7 @@ export async function renderAdminPatientsImport(content) {
     exportToCsv('แบบฟอร์มนำเข้าข้อมูลผู้ป่วย.csv', [buildExampleRow()]);
   });
 
-  fileInputEl.addEventListener('change', async (e) => {
-    const file = e.target.files && e.target.files[0];
+  async function processFile(file) {
     if (!file) return;
 
     fileErrorEl.classList.add('hidden');
@@ -182,6 +188,34 @@ export async function renderAdminPatientsImport(content) {
     state.rawRows = rawRows;
     state.mappedRows = rawRows.map(mapRow);
     renderPreview();
+  }
+
+  fileInputEl.addEventListener('change', (e) => {
+    const file = e.target.files && e.target.files[0];
+    processFile(file);
+  });
+
+  // ลากไฟล์ CSV มาวาง (desktop) — เสริมจากช่องแตะเลือกไฟล์เดิม
+  ['dragenter', 'dragover'].forEach((evt) => {
+    dropzoneEl.addEventListener(evt, (e) => {
+      e.preventDefault();
+      dropzoneEl.classList.add('border-sky-400', 'bg-sky-50');
+    });
+  });
+  ['dragleave', 'dragend'].forEach((evt) => {
+    dropzoneEl.addEventListener(evt, () => {
+      dropzoneEl.classList.remove('border-sky-400', 'bg-sky-50');
+    });
+  });
+  dropzoneEl.addEventListener('drop', (e) => {
+    e.preventDefault();
+    dropzoneEl.classList.remove('border-sky-400', 'bg-sky-50');
+    const file = e.dataTransfer.files && e.dataTransfer.files[0];
+    if (file && (file.type === 'text/csv' || file.name.toLowerCase().endsWith('.csv'))) {
+      processFile(file);
+    } else {
+      showFileError('รองรับเฉพาะไฟล์ .csv เท่านั้น');
+    }
   });
 
   function renderPreview() {
@@ -210,7 +244,7 @@ export async function renderAdminPatientsImport(content) {
           <tbody>${rows.map((r, i) => desktopPreviewRowHtml(r, hints[i], i + 1)).join('')}</tbody>
         </table>
       </div>
-      <button id="pi-submit" type="button" class="w-full py-3 rounded-xl bg-sky-600 text-white font-medium text-sm disabled:opacity-50">
+      <button id="pi-submit" type="button" class="w-full py-3 rounded-xl accent-gradient text-white font-medium text-sm disabled:opacity-50">
         นำเข้าข้อมูล ${rows.length} รายการ
       </button>
     `;

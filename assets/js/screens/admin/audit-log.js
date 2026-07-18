@@ -10,7 +10,7 @@
  * จึงทำเป็นช่องกรอกค่าเต็มไม่ใช่ search box กันผู้ใช้พิมพ์บางส่วนแล้วงงว่าทำไมไม่เจอ
  */
 import { apiCall } from '../../api.js';
-import { renderListSkeleton, renderEmptyState, renderPagination, escapeHtml } from '../../ui.js';
+import { renderListSkeleton, renderEmptyState, renderPagination, renderBreadcrumb, escapeHtml } from '../../ui.js';
 import { formatThaiDateTime, initThaiDatePicker } from '../../date-picker.js';
 import { getUserDirectoryMap } from '../../directory.js';
 
@@ -22,7 +22,7 @@ export async function renderAdminAuditLog(content) {
 
   content.innerHTML = `
     <div class="px-4 py-5 max-w-3xl mx-auto">
-      <a href="#/admin" class="text-sm text-sky-600 mb-3 inline-block">← กลับไปเมนูผู้ดูแลระบบ</a>
+      <div id="al-breadcrumb"></div>
       <h1 class="text-lg font-bold text-slate-800 mb-1">Audit Log</h1>
       <p class="text-xs text-slate-400 mb-4">ประวัติการกระทำทั้งหมดในระบบ เรียงใหม่สุดก่อน</p>
 
@@ -40,7 +40,7 @@ export async function renderAdminAuditLog(content) {
             class="px-3 py-2 rounded-xl border border-slate-200 text-xs focus:outline-none focus:ring-2 focus:ring-sky-500" />
         </div>
         <div class="flex gap-2">
-          <button id="al-apply" type="button" class="flex-1 py-2 rounded-xl bg-sky-600 text-white text-xs font-medium">กรอง</button>
+          <button id="al-apply" type="button" class="flex-1 py-2 rounded-xl accent-gradient text-white text-xs font-medium">กรอง</button>
           <button id="al-clear" type="button" class="px-4 py-2 rounded-xl bg-slate-100 text-slate-600 text-xs font-medium">ล้าง</button>
         </div>
       </div>
@@ -49,6 +49,11 @@ export async function renderAdminAuditLog(content) {
       <div id="al-pagination"></div>
     </div>
   `;
+
+  renderBreadcrumb(content.querySelector('#al-breadcrumb'), [
+    { label: 'ผู้ดูแลระบบ', href: '#/admin' },
+    { label: 'Audit Log' }
+  ]);
 
   const resultsEl = content.querySelector('#al-results');
   const paginationEl = content.querySelector('#al-pagination');

@@ -53,7 +53,13 @@ export async function renderAssessmentDetail(content, params) {
   const patient = patientData.patient;
 
   bodyEl.innerHTML = `
-    <a href="#/assessments/${encodeURIComponent(params.patientId)}" class="text-sm text-sky-600 mb-3 inline-block">← กลับไปประวัติแบบประเมิน</a>
+    <nav aria-label="breadcrumb" class="flex items-center flex-wrap gap-1.5 text-xs text-slate-400 mb-3">
+      <a href="#/assessments" class="hover:text-sky-600 transition">แบบประเมิน</a>
+      <svg class="w-3.5 h-3.5 text-slate-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>
+      <a href="#/assessments/${encodeURIComponent(params.patientId)}" class="hover:text-sky-600 transition">${escapeHtml(patient.name)}</a>
+      <svg class="w-3.5 h-3.5 text-slate-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>
+      <span class="text-slate-600 font-medium">${escapeHtml(def.title)}</span>
+    </nav>
     <h1 class="text-lg font-bold text-slate-800">${escapeHtml(def.title)}</h1>
     <p class="text-xs text-slate-400 mt-0.5 mb-1">
       ${escapeHtml(formatThaiDateTime(assessment.createdAt))}${assessment.visitId ? ' · บันทึกจากการเยี่ยมบ้าน' : ' · ประเมินเดี่ยว'}
