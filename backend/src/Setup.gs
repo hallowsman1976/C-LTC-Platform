@@ -24,6 +24,9 @@ var ENUM_NOTIFICATION_CHANNEL_ = ['LINE'];
 var ENUM_NOTIFICATION_STATUS_ = ['sent', 'failed', 'skipped_no_line_id'];
 var ENUM_CAREPLAN_STATUS_ = ['draft', 'pendingApproval', 'approved', 'rejected'];
 var ENUM_VISIT_REVIEW_STATUS_ = ['pending', 'reviewed'];
+var ENUM_DEPENDENCY_GROUP_ = ['1', '2', '3', '4'];
+var ENUM_FAMILY_CAREGIVER_RELATION_ = ['สามี/ภรรยา/บุตร', 'ญาติ', 'ผู้รับจ้าง', 'อื่นๆ'];
+var ENUM_SYMPTOM_TREND_ = ['คงที่', 'ดีขึ้น', 'แย่ลง'];
 
 /**
  * นิยาม schema ของทุกชีต — ต้องตรงกับ BLUEPRINT.md §7 เป๊ะทุกคอลัมน์
@@ -44,16 +47,23 @@ var SHEET_DEFINITIONS_ = [
     name: SHEET_NAMES.PATIENTS,
     headers: ['PatientId', 'HN', 'CID', 'Name', 'Gender', 'BirthDate', 'Village', 'Tambon', 'Amphoe', 'Changwat',
       'AdlGroup', 'AdlScore', 'RiskLevel', 'PrimaryCgUserId', 'ResponsibleCmUserId', 'Status', 'NextVisitDate',
-      'DriveFolderId', 'IsDeleted', 'CreatedAt', 'UpdatedAt'],
+      'DriveFolderId', 'IsDeleted', 'CreatedAt', 'UpdatedAt',
+      // เพิ่มสำหรับหน้าจอ CG.2 (รายงานการเยี่ยมบ้านผู้ป่วยและผู้สูงอายุ) — ข้อมูลโปรไฟล์ที่กรอกครั้งเดียว/แก้ไม่บ่อย
+      // FamilyCaregiver* คือญาติ/ผู้ดูแลตามข้อมูลในกระดาษ CG.2 คนละส่วนกับ PrimaryCgUserId (บัญชี CG ในระบบ)
+      'HhcNumber', 'Diagnosis', 'DependencyGroup', 'Weight', 'Height',
+      'FamilyCaregiverName', 'FamilyCaregiverAge', 'FamilyCaregiverRelation', 'FamilyCaregiverRelationOtherNote'],
     validations: [
       { column: 'Gender', values: ENUM_GENDER_ },
       { column: 'AdlGroup', values: ENUM_ADL_GROUP_ },
       { column: 'RiskLevel', values: ENUM_RISK_LEVEL_ },
       { column: 'Status', values: ENUM_PATIENT_STATUS_ },
-      { column: 'IsDeleted', values: ENUM_BOOL_ }
+      { column: 'IsDeleted', values: ENUM_BOOL_ },
+      { column: 'DependencyGroup', values: ENUM_DEPENDENCY_GROUP_ },
+      { column: 'FamilyCaregiverRelation', values: ENUM_FAMILY_CAREGIVER_RELATION_ }
     ],
     // บังคับ Plain Text กันชีตแปลง string "YYYY-MM-DD" เป็น Date object อัตโนมัติ (ทำให้อ่านกลับมาไม่ตรงกับที่เขียนไป)
-    plainTextColumns: ['BirthDate', 'NextVisitDate']
+    // HhcNumber ก็เป็น Plain Text ด้วยเหตุผลเดียวกับ Users.Phone — เลข 0 นำหน้าห้ามหาย
+    plainTextColumns: ['BirthDate', 'NextVisitDate', 'HhcNumber']
   },
   {
     name: SHEET_NAMES.VISITS,
@@ -118,6 +128,21 @@ var SHEET_DEFINITIONS_ = [
       { column: 'Status', values: ENUM_CAREPLAN_STATUS_ }
     ],
     plainTextColumns: ['ReviewDate']
+  },
+  {
+    name: SHEET_NAMES.CG2_LOGS,
+    // บันทึกการเยี่ยมบ้านแบบสั้น (CG.2) — append-only เหมือนแบบประเมินอื่น ๆ ในระบบ ไม่มีแก้/ลบ
+    // คะแนนสมองเสื่อม/ซึมเศร้า/ADL/TAI เป็นตัวเลขที่ผู้ใช้พิมพ์เองตามกระดาษต้นฉบับ ไม่ได้ผูกกับแบบประเมิน
+    // Barthel/2Q-9Q-8Q ที่มีอยู่แล้วในระบบ (ดูเหตุผลใน Cg2Logs.gs)
+    headers: ['LogId', 'PatientId', 'LoggedByUserId', 'LogDate', 'SymptomTrend', 'ConditionNote',
+      'Temp', 'Pulse', 'RespRate', 'BP', 'WaistCircumference',
+      'DementiaScore', 'DepressionScore', 'AdlScore', 'TaiScore',
+      'CaregiverPresent', 'Recommendations', 'RecommendationOtherNote', 'CreatedAt', 'UpdatedAt'],
+    validations: [
+      { column: 'SymptomTrend', values: ENUM_SYMPTOM_TREND_ },
+      { column: 'CaregiverPresent', values: ENUM_BOOL_ }
+    ],
+    plainTextColumns: ['LogDate']
   },
   {
     name: SHEET_NAMES.SESSIONS,

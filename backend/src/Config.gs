@@ -18,6 +18,7 @@ var SHEET_NAMES = Object.freeze({
   ASSESSMENTS_PRESSUREULCER: 'Assessments_PressureUlcer',
   ASSESSMENTS_INHOMESSS: 'Assessments_INHOMESSS',
   CARE_PLANS: 'CarePlans',
+  CG2_LOGS: 'CG2Logs',
   SESSIONS: 'Sessions',
   CONFIG: 'Config',
   AUDIT_LOG: 'AuditLog',

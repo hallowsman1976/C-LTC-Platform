@@ -194,6 +194,16 @@ var ACTION_ROUTES_ = {
     requireAuth: true,
     roles: ['ADMIN', 'CM', 'CG'],
     handler: function (ctx) { return uploadFile(ctx.payload, ctx.user); }
+  },
+  'cg2logs.create': {
+    requireAuth: true,
+    roles: ['ADMIN', 'CM', 'CG'],
+    handler: function (ctx) { return createCg2Log(ctx.payload, ctx.user); }
+  },
+  'cg2logs.listByPatient': {
+    requireAuth: true,
+    roles: ['ADMIN', 'CM', 'CG', 'VIEWER'],
+    handler: function (ctx) { return listCg2LogsByPatient(ctx.payload, ctx.user); }
   }
 };
 

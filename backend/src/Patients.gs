@@ -10,7 +10,10 @@
  */
 
 var PATIENT_REQUIRED_FIELDS_ = ['name', 'gender', 'birthDate', 'hn', 'cid', 'village', 'tambon', 'amphoe', 'changwat'];
-var PATIENT_PATCH_ALLOWED_KEYS_ = ['name', 'gender', 'birthDate', 'hn', 'village', 'tambon', 'amphoe', 'changwat', 'status', 'nextVisitDate'];
+var PATIENT_PATCH_ALLOWED_KEYS_ = ['name', 'gender', 'birthDate', 'hn', 'village', 'tambon', 'amphoe', 'changwat', 'status', 'nextVisitDate',
+  // โปรไฟล์เสริมสำหรับหน้าจอ CG.2 — ดูคอมเมนต์ที่ SHEET_DEFINITIONS_.Patients ใน Setup.gs
+  'hhcNumber', 'diagnosis', 'dependencyGroup', 'weight', 'height',
+  'familyCaregiverName', 'familyCaregiverAge', 'familyCaregiverRelation', 'familyCaregiverRelationOtherNote'];
 var PATIENT_LIST_MAX_PAGE_SIZE_ = 100;
 var PATIENT_IMPORT_MAX_ROWS_ = 500;
 
@@ -123,6 +126,16 @@ function sanitizePatientForClient_(patientRecord, callerUser, options) {
     status: patientRecord.Status,
     nextVisitDate: patientRecord.NextVisitDate || '',
     isDeleted: coerceBoolean_(patientRecord.IsDeleted),
+    // โปรไฟล์เสริมสำหรับหน้าจอ CG.2
+    hhcNumber: patientRecord.HhcNumber || '',
+    diagnosis: patientRecord.Diagnosis || '',
+    dependencyGroup: patientRecord.DependencyGroup || '',
+    weight: patientRecord.Weight || '',
+    height: patientRecord.Height || '',
+    familyCaregiverName: patientRecord.FamilyCaregiverName || '',
+    familyCaregiverAge: patientRecord.FamilyCaregiverAge || '',
+    familyCaregiverRelation: patientRecord.FamilyCaregiverRelation || '',
+    familyCaregiverRelationOtherNote: patientRecord.FamilyCaregiverRelationOtherNote || '',
     createdAt: patientRecord.CreatedAt,
     updatedAt: patientRecord.UpdatedAt
   };
@@ -427,6 +440,29 @@ function updatePatient(payload, callerUser) {
     }
     patch.NextVisitDate = patchInput.nextVisitDate || '';
   }
+
+  // โปรไฟล์เสริมสำหรับหน้าจอ CG.2 — ทุกฟิลด์ไม่บังคับ (ผ่านมาก็รับ ไม่ผ่านมาก็ไม่แตะของเดิม)
+  if (patchInput.hhcNumber !== undefined) patch.HhcNumber = patchInput.hhcNumber;
+  if (patchInput.diagnosis !== undefined) patch.Diagnosis = patchInput.diagnosis;
+  if (patchInput.dependencyGroup !== undefined) {
+    if (patchInput.dependencyGroup && !isValidEnum_(patchInput.dependencyGroup, ENUM_DEPENDENCY_GROUP_)) {
+      return err_(ERROR_CODES.VALIDATION, 'กลุ่มภาวะพึ่งพิงไม่ถูกต้อง', { fields: { dependencyGroup: 'ต้องเป็นหนึ่งใน ' + ENUM_DEPENDENCY_GROUP_.join(', ') } });
+    }
+    patch.DependencyGroup = patchInput.dependencyGroup || '';
+  }
+  if (patchInput.weight !== undefined) patch.Weight = patchInput.weight;
+  if (patchInput.height !== undefined) patch.Height = patchInput.height;
+  if (patchInput.familyCaregiverName !== undefined) patch.FamilyCaregiverName = patchInput.familyCaregiverName;
+  if (patchInput.familyCaregiverAge !== undefined) patch.FamilyCaregiverAge = patchInput.familyCaregiverAge;
+  if (patchInput.familyCaregiverRelation !== undefined) {
+    if (patchInput.familyCaregiverRelation && !isValidEnum_(patchInput.familyCaregiverRelation, ENUM_FAMILY_CAREGIVER_RELATION_)) {
+      return err_(ERROR_CODES.VALIDATION, 'ความเกี่ยวข้องของผู้ดูแลหลักไม่ถูกต้อง', {
+        fields: { familyCaregiverRelation: 'ต้องเป็นหนึ่งใน ' + ENUM_FAMILY_CAREGIVER_RELATION_.join(', ') }
+      });
+    }
+    patch.FamilyCaregiverRelation = patchInput.familyCaregiverRelation || '';
+  }
+  if (patchInput.familyCaregiverRelationOtherNote !== undefined) patch.FamilyCaregiverRelationOtherNote = patchInput.familyCaregiverRelationOtherNote;
 
   if (Object.keys(patch).length === 0) {
     return err_(ERROR_CODES.VALIDATION, 'ไม่มีข้อมูลที่จะแก้ไข — อนุญาตเฉพาะ ' + PATIENT_PATCH_ALLOWED_KEYS_.join(', '));
