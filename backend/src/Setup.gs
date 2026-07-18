@@ -36,7 +36,9 @@ var SHEET_DEFINITIONS_ = [
     validations: [
       { column: 'Role', values: ENUM_ROLE_ },
       { column: 'Active', values: ENUM_BOOL_ }
-    ]
+    ],
+    // บังคับ Plain Text กันชีตแปลงเบอร์โทรเป็นตัวเลข (เช่น "0812345678" → 812345678 เลข 0 นำหน้าหาย)
+    plainTextColumns: ['Phone']
   },
   {
     name: SHEET_NAMES.PATIENTS,
@@ -405,6 +407,49 @@ function cleanupExcessRows() {
     return ok_({ sheetsTrimmed: trimmed });
   } catch (err) {
     Logger.log('[cleanupExcessRows] ล้มเหลว: ' + (err.stack || err));
+    return errFromException_(err, ERROR_CODES.SERVER);
+  }
+}
+
+/**
+ * แก้ format คอลัมน์ Phone ของชีต Users ที่มีอยู่แล้วให้เป็น Plain Text — สำหรับชีตที่สร้างมาก่อน Phone
+ * จะถูกเพิ่มเข้า plainTextColumns (ดู SHEET_DEFINITIONS_) แถวใหม่ที่เพิ่มไปข้างหน้าจะเป็น Plain Text
+ * อัตโนมัติผ่าน applyRowFormats_ อยู่แล้ว ฟังก์ชันนี้ไล่แก้แถวเดิมเท่านั้น เรียกเองจาก Apps Script Editor
+ * ครั้งเดียวพอ (ปลอดภัยต่อการรันซ้ำ)
+ *
+ * ข้อจำกัด: ถ้าเบอร์โทรที่มีเลข 0 นำหน้าเคยถูกชีตแปลงเป็นตัวเลขไปก่อนแล้ว (เช่น "0812345678" กลายเป็น 812345678)
+ * เลข 0 ที่หายไปกู้คืนอัตโนมัติไม่ได้ ต้องพิมพ์เบอร์ที่ถูกต้องทับเข้าไปเอง — แต่หลังรันฟังก์ชันนี้แล้วคอลัมน์จะเป็น
+ * Plain Text พิมพ์ทับได้โดยไม่โดนแปลงเป็นตัวเลขซ้ำอีก
+ * @return {{ok: boolean, data: Object}|{ok: boolean, code: string, message: string}}
+ */
+function fixUsersPhoneColumnFormat() {
+  try {
+    var ss = getSpreadsheet_();
+    var sheet = ss.getSheetByName(SHEET_NAMES.USERS);
+    if (!sheet) return err_(ERROR_CODES.SERVER, 'ไม่พบชีต Users');
+
+    var headers = getHeaderRow_(sheet);
+    var colIndex = headers.indexOf('Phone') + 1;
+    if (colIndex === 0) return err_(ERROR_CODES.SERVER, 'ไม่พบคอลัมน์ Phone ในชีต Users');
+
+    var lastRow = sheet.getLastRow();
+    if (lastRow < 2) {
+      return ok_({ rowsFixed: 0 });
+    }
+
+    var range = sheet.getRange(2, colIndex, lastRow - 1, 1);
+    var values = range.getValues();
+    range.setNumberFormat('@');
+    var textValues = values.map(function (row) {
+      var v = row[0];
+      return [v === '' || v === null ? '' : String(v)];
+    });
+    range.setValues(textValues);
+
+    Logger.log('[fixUsersPhoneColumnFormat] เสร็จสมบูรณ์: ' + (lastRow - 1) + ' แถว');
+    return ok_({ rowsFixed: lastRow - 1 });
+  } catch (err) {
+    Logger.log('[fixUsersPhoneColumnFormat] ล้มเหลว: ' + (err.stack || err));
     return errFromException_(err, ERROR_CODES.SERVER);
   }
 }
