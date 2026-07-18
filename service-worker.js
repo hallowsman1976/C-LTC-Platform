@@ -15,7 +15,9 @@
 // confirmDialog/promptDialog (ui.js) ไล่สี + CSV import (admin/patients-import.js) รองรับลากไฟล์วาง
 // v14: แก้ไอคอนใหญ่ผิดปกติ — w-4.5/h-4.5 ไม่มีอยู่จริงใน Tailwind scale (ข้ามจาก 4 ไป 5) ทำให้ไม่มี CSS
 // กำกับขนาด เปลี่ยนเป็น w-[18px] h-[18px] แทน (login.html, patients-list.js, visit-form.js)
-const CACHE_NAME = 'ltc-smart-care-v14';
+// v15: หน้าใหม่ CG.2 (รายงานเยี่ยมบ้านผู้ป่วยและผู้สูงอายุ) — ไฟล์ใหม่ screens/cg2-log.js + route ใน router.js +
+// ปุ่มเปิดจาก patient-detail.js + ตัวเลือก/badge ใหม่ใน constants.js
+const CACHE_NAME = 'ltc-smart-care-v15';
 const APP_SHELL_FILES = [
   './',
   './index.html',

@@ -15,6 +15,7 @@ import { renderPatientsList } from './screens/patients-list.js';
 import { renderPatientForm } from './screens/patient-form.js';
 import { renderPatientDetail } from './screens/patient-detail.js';
 import { renderCarePlan } from './screens/care-plan.js';
+import { renderCg2Log } from './screens/cg2-log.js';
 import { renderAssignCareTeam } from './screens/assign-care-team.js';
 import { renderVisitForm } from './screens/visit-form.js';
 import { renderAssessmentsHub, renderPatientAssessments } from './screens/assessments-hub.js';
@@ -44,6 +45,7 @@ const routeDefs = [
   { pattern: '/patients/:id/visit/new', title: 'บันทึกการเยี่ยม', roles: ['ADMIN', 'CM', 'CG'], render: renderVisitForm },
   { pattern: '/patients/:id/edit', title: 'แก้ไขผู้ป่วย', roles: ['ADMIN', 'CM'], render: renderPatientForm },
   { pattern: '/patients/:id/care-plan', title: 'Care Plan', render: renderCarePlan },
+  { pattern: '/patients/:id/cg2-log', title: 'รายงานเยี่ยมบ้าน (CG.2)', render: renderCg2Log },
   { pattern: '/patients/:id/assign', title: 'มอบหมายทีมดูแล', roles: ['ADMIN', 'CM'], render: renderAssignCareTeam },
   { pattern: '/patients/:id', title: 'รายละเอียดผู้ป่วย', render: renderPatientDetail },
   { pattern: '/assessments', title: 'แบบประเมิน', render: renderAssessmentsHub },

@@ -125,6 +125,9 @@ function renderActions(container, patient) {
   if (canCarePlan) {
     buttons.push(`<a href="#/patients/${encodeURIComponent(patient.patientId)}/care-plan" class="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-sky-50 text-sky-700 text-sm font-medium hover:bg-sky-100 transition"><svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="4.5" width="14" height="17" rx="2"/><path d="M8.5 13l2.2 2.2L15.5 10.5"/></svg>Care Plan</a>`);
   }
+  if (canCarePlan) {
+    buttons.push(`<a href="#/patients/${encodeURIComponent(patient.patientId)}/cg2-log" class="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-sky-50 text-sky-700 text-sm font-medium hover:bg-sky-100 transition"><svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5L12 4l9 6.5"/><path d="M5.5 9.5V19a1 1 0 0 0 1 1H10v-4.5a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1V20h3.5a1 1 0 0 0 1-1V9.5"/></svg>เยี่ยมบ้าน (CG.2)</a>`);
+  }
   if (canArchive) {
     buttons.push(`<button id="pd-archive-btn" type="button" class="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-rose-50 text-rose-600 text-sm font-medium hover:bg-rose-100 transition"><svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="7" width="16" height="13" rx="1.5"/><path d="M9 7V5.5A1.5 1.5 0 0 1 10.5 4h3A1.5 1.5 0 0 1 15 5.5V7M3 7h18"/></svg>เก็บเข้าคลัง</button>`);
   }
