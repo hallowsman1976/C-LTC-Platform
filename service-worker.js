@@ -13,7 +13,9 @@
 // v12: floating label ขยายไปฟอร์มเยี่ยมบ้าน (visit-form-steps.js textField) + ฟอร์มผู้ใช้ ADMIN (admin/users.js)
 // v13: form-widgets.js ปุ่มเลือก (segmented/yesno/single/chip) ไล่สี gradient + inhomesss progress bar +
 // confirmDialog/promptDialog (ui.js) ไล่สี + CSV import (admin/patients-import.js) รองรับลากไฟล์วาง
-const CACHE_NAME = 'ltc-smart-care-v13';
+// v14: แก้ไอคอนใหญ่ผิดปกติ — w-4.5/h-4.5 ไม่มีอยู่จริงใน Tailwind scale (ข้ามจาก 4 ไป 5) ทำให้ไม่มี CSS
+// กำกับขนาด เปลี่ยนเป็น w-[18px] h-[18px] แทน (login.html, patients-list.js, visit-form.js)
+const CACHE_NAME = 'ltc-smart-care-v14';
 const APP_SHELL_FILES = [
   './',
   './index.html',
