@@ -17,7 +17,9 @@
 // กำกับขนาด เปลี่ยนเป็น w-[18px] h-[18px] แทน (login.html, patients-list.js, visit-form.js)
 // v15: หน้าใหม่ CG.2 (รายงานเยี่ยมบ้านผู้ป่วยและผู้สูงอายุ) — ไฟล์ใหม่ screens/cg2-log.js + route ใน router.js +
 // ปุ่มเปิดจาก patient-detail.js + ตัวเลือก/badge ใหม่ใน constants.js
-const CACHE_NAME = 'ltc-smart-care-v15';
+// v16: เมนูใหม่ "บันทึกการเยี่ยม" ต่อจาก "แบบประเมิน" ใน sidebar (index.html) — ไฟล์ใหม่ screens/visit-log-hub.js
+// (เลือกผู้ป่วยแล้วพาไปหน้า CG.2) + route ใน router.js
+const CACHE_NAME = 'ltc-smart-care-v16';
 const APP_SHELL_FILES = [
   './',
   './index.html',

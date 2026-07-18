@@ -19,6 +19,7 @@ import { renderCg2Log } from './screens/cg2-log.js';
 import { renderAssignCareTeam } from './screens/assign-care-team.js';
 import { renderVisitForm } from './screens/visit-form.js';
 import { renderAssessmentsHub, renderPatientAssessments } from './screens/assessments-hub.js';
+import { renderVisitLogHub } from './screens/visit-log-hub.js';
 import { renderAssessmentForm } from './screens/assessment-form.js';
 import { renderAssessmentDetail } from './screens/assessment-detail.js';
 import { renderReports } from './screens/reports.js';
@@ -54,6 +55,7 @@ const routeDefs = [
   { pattern: '/assessments/:patientId/:type', title: 'บันทึกแบบประเมิน', roles: ['ADMIN', 'CM', 'CG'], render: renderAssessmentForm },
   // ดูผลย้อนหลัง (อ่านอย่างเดียว) — ไม่จำกัด role เพราะ assessments.get อนุญาต VIEWER ด้วย
   { pattern: '/assessments/:patientId/:type/:assessmentId', title: 'ผลแบบประเมิน', render: renderAssessmentDetail },
+  { pattern: '/visit-log', title: 'บันทึกการเยี่ยม', render: renderVisitLogHub },
   { pattern: '/reports', title: 'รายงาน', render: renderReports },
   { pattern: '/map', title: 'แผนที่ผู้ป่วย', render: renderMap },
   { pattern: '/settings', title: 'ตั้งค่า', render: renderSettings },
