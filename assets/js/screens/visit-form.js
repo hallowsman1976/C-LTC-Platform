@@ -116,7 +116,7 @@ function mountWizard(content, patient, state) {
       <div class="sticky top-0 bg-white border-b border-slate-200">
         <div class="px-4 py-3 flex items-center justify-between gap-3 md:max-w-xl md:mx-auto">
           <button id="vf-exit-btn" type="button" aria-label="ปิดฟอร์ม" class="w-8 h-8 -ml-1.5 flex items-center justify-center rounded-full text-slate-400 hover:bg-slate-100 transition">
-            <svg class="w-4.5 h-4.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
+            <svg class="w-[18px] h-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
           </button>
           <div class="text-center min-w-0">
             <p id="vf-step-counter" class="text-xs text-slate-400">ขั้นตอน ${state.currentStep}/${TOTAL_STEPS} · ${escapeHtml(patient.name)} (HN ${escapeHtml(patient.hn)})</p>
